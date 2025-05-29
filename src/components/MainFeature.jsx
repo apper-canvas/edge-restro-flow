@@ -116,6 +116,43 @@ const MainFeature = () => {
   const [isAddMenuItemModalOpen, setIsAddMenuItemModalOpen] = useState(false)
   const [isEditOrderModalOpen, setIsEditOrderModalOpen] = useState(false)
   const [editingOrder, setEditingOrder] = useState(null)
+  const [payments, setPayments] = useState([
+    {
+      id: 'PAY001',
+      orderId: '001',
+      amount: 32.50,
+      paymentMethod: 'Cash',
+      status: 'completed',
+      timestamp: new Date(Date.now() - 3600000),
+      notes: 'Exact change provided'
+    },
+    {
+      id: 'PAY002',
+      orderId: '002',
+      amount: 28.00,
+      paymentMethod: 'Card',
+      status: 'completed',
+      timestamp: new Date(Date.now() - 1800000),
+      notes: 'Visa card payment'
+    },
+    {
+      id: 'PAY003',
+      orderId: '003',
+      amount: 20.00,
+      paymentMethod: 'Cash',
+      status: 'partial',
+      timestamp: new Date(Date.now() - 900000),
+      notes: 'Partial payment received'
+    }
+  ])
+  const [isAddPaymentModalOpen, setIsAddPaymentModalOpen] = useState(false)
+  const [paymentFilters, setPaymentFilters] = useState({
+    status: 'All',
+    paymentMethod: 'All',
+    orderId: 'All'
+  })
+
+
 
 
 
@@ -125,8 +162,10 @@ const MainFeature = () => {
     { id: 'orders', label: 'Orders', icon: 'ClipboardList' },
     { id: 'tables', label: 'Tables', icon: 'Grid3X3' },
     { id: 'menu', label: 'Menu', icon: 'MenuSquare' },
-    { id: 'inventory', label: 'Inventory', icon: 'Package' }
+    { id: 'inventory', label: 'Inventory', icon: 'Package' },
+    { id: 'payments', label: 'Payments', icon: 'CreditCard' }
   ]
+
 
   const statusColors = {
     pending: 'status-pending',
@@ -514,6 +553,100 @@ const MainFeature = () => {
     
     return { totalItems, inStock, lowStock, outOfStock }
   }
+
+
+  // Payment Management Functions
+  const addPayment = (paymentData) => {
+    const payment = {
+      id: `PAY${String(payments.length + 1).padStart(3, '0')}`,
+      orderId: paymentData.orderId,
+      amount: paymentData.amount,
+      paymentMethod: paymentData.paymentMethod,
+      status: paymentData.amount >= paymentData.orderTotal ? 'completed' : 'partial',
+      timestamp: new Date(),
+      notes: paymentData.notes
+    }
+
+    setPayments([...payments, payment])
+    
+    // Update order status if payment is complete
+    if (payment.status === 'completed') {
+      const orderToUpdate = orders.find(order => order.id === paymentData.orderId)
+      if (orderToUpdate && orderToUpdate.status !== 'completed') {
+        updateOrderStatus(paymentData.orderId, 'completed')
+      }
+    }
+    
+    toast.success(
+      <div className="flex items-center space-x-2">
+        <ApperIcon name="CreditCard" className="w-4 h-4 text-green-600" />
+        <div>
+          <div className="font-medium">Payment Recorded</div>
+          <div className="text-xs">${paymentData.amount} via {paymentData.paymentMethod}</div>
+        </div>
+      </div>
+    )
+  }
+
+  const updatePaymentStatus = (paymentId, newStatus) => {
+    setPayments(payments.map(payment => 
+      payment.id === paymentId ? { ...payment, status: newStatus } : payment
+    ))
+    toast.success(`Payment #${paymentId} status updated to ${newStatus}`)
+  }
+
+  const deletePayment = (paymentId) => {
+    if (window.confirm(`Are you sure you want to delete Payment #${paymentId}?`)) {
+      setPayments(payments.filter(payment => payment.id !== paymentId))
+      toast.success(`Payment #${paymentId} deleted successfully!`)
+    }
+  }
+
+  const filterPayments = () => {
+    return payments.filter(payment => {
+      if (paymentFilters.status !== 'All' && payment.status !== paymentFilters.status) {
+        return false
+      }
+      if (paymentFilters.paymentMethod !== 'All' && payment.paymentMethod !== paymentFilters.paymentMethod) {
+        return false
+      }
+      if (paymentFilters.orderId !== 'All' && payment.orderId !== paymentFilters.orderId) {
+        return false
+      }
+      return true
+    })
+  }
+
+  const handlePaymentFilterChange = (filterType, value) => {
+    setPaymentFilters(prev => ({ ...prev, [filterType]: value }))
+  }
+
+  const clearPaymentFilters = () => {
+    setPaymentFilters({
+      status: 'All',
+      paymentMethod: 'All',
+      orderId: 'All'
+    })
+    toast.success('Payment filters cleared')
+  }
+
+  const getPaymentStats = () => {
+    const totalPayments = payments.length
+    const completedPayments = payments.filter(p => p.status === 'completed').length
+    const partialPayments = payments.filter(p => p.status === 'partial').length
+    const pendingPayments = payments.filter(p => p.status === 'pending').length
+    const totalRevenue = payments
+      .filter(p => p.status === 'completed' || p.status === 'partial')
+      .reduce((sum, p) => sum + p.amount, 0)
+    
+    return { totalPayments, completedPayments, partialPayments, pendingPayments, totalRevenue }
+  }
+
+  const paymentStats = getPaymentStats()
+  const filteredPayments = filterPayments()
+  const uniquePaymentMethods = [...new Set(payments.map(payment => payment.paymentMethod))]
+  const uniqueOrderIds = [...new Set(payments.map(payment => payment.orderId))]
+
 
   const inventoryStats = getInventoryStats()
 
@@ -1353,6 +1486,298 @@ const MainFeature = () => {
           </motion.div>
         )}
 
+        {activeTab === 'payments' && (
+          <motion.div
+            key="payments"
+            initial={{ x: 20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -20, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-6"
+          >
+            {/* Payment Stats Overview */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="card-elegant text-center">
+                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <ApperIcon name="Check" className="w-6 h-6 text-green-600" />
+                </div>
+                <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">{paymentStats.completedPayments}</p>
+                <p className="text-sm text-surface-600 dark:text-surface-400">Completed</p>
+              </div>
+              
+              <div className="card-elegant text-center">
+                <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <ApperIcon name="Clock" className="w-6 h-6 text-amber-600" />
+                </div>
+                <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">{paymentStats.pendingPayments}</p>
+                <p className="text-sm text-surface-600 dark:text-surface-400">Pending</p>
+              </div>
+              
+              <div className="card-elegant text-center">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <ApperIcon name="Percent" className="w-6 h-6 text-blue-600" />
+                </div>
+                <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">{paymentStats.partialPayments}</p>
+                <p className="text-sm text-surface-600 dark:text-surface-400">Partial</p>
+              </div>
+              
+              <div className="card-elegant text-center">
+                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <ApperIcon name="DollarSign" className="w-6 h-6 text-purple-600" />
+                </div>
+                <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">
+                  ${paymentStats.totalRevenue.toFixed(0)}
+                </p>
+                <p className="text-sm text-surface-600 dark:text-surface-400">Total Revenue</p>
+              </div>
+            </div>
+
+            {/* Add New Payment */}
+            <div className="card-elegant">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg sm:text-xl font-semibold text-surface-900 dark:text-surface-100 flex items-center">
+                    <ApperIcon name="Plus" className="w-5 h-5 mr-2 text-primary" />
+                    Record Payment
+                  </h3>
+                  <p className="text-sm text-surface-600 dark:text-surface-400 mt-1">
+                    Manually record payments received for orders
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsAddPaymentModalOpen(true)}
+                  className="btn-primary flex items-center space-x-2"
+                >
+                  <ApperIcon name="Plus" className="w-4 h-4" />
+                  <span>Add Payment</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Payment Filters */}
+            <div className="filter-card">
+              <div className="filter-header">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                      <ApperIcon name="Filter" className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">Payment Filters</h3>
+                      <p className="text-white/80 text-sm">Filter payments by status, method, and order</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={clearPaymentFilters}
+                    className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 backdrop-blur-sm"
+                  >
+                    <ApperIcon name="RotateCcw" className="w-4 h-4" />
+                    <span>Reset Filters</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Status Filter */}
+                <div className="filter-control">
+                  <label className="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-3 flex items-center">
+                    <ApperIcon name="CheckCircle" className="w-4 h-4 mr-2 text-primary" />
+                    Payment Status
+                  </label>
+                  <select
+                    value={paymentFilters.status}
+                    onChange={(e) => handlePaymentFilterChange('status', e.target.value)}
+                    className="filter-select"
+                  >
+                    <option value="All">All Status</option>
+                    <option value="completed">Completed</option>
+                    <option value="pending">Pending</option>
+                    <option value="partial">Partial</option>
+                    <option value="failed">Failed</option>
+                  </select>
+                </div>
+
+                {/* Payment Method Filter */}
+                <div className="filter-control">
+                  <label className="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-3 flex items-center">
+                    <ApperIcon name="CreditCard" className="w-4 h-4 mr-2 text-primary" />
+                    Payment Method
+                  </label>
+                  <select
+                    value={paymentFilters.paymentMethod}
+                    onChange={(e) => handlePaymentFilterChange('paymentMethod', e.target.value)}
+                    className="filter-select"
+                  >
+                    <option value="All">All Methods</option>
+                    {uniquePaymentMethods.map(method => (
+                      <option key={method} value={method}>{method}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Order Filter */}
+                <div className="filter-control">
+                  <label className="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-3 flex items-center">
+                    <ApperIcon name="ClipboardList" className="w-4 h-4 mr-2 text-primary" />
+                    Order ID
+                  </label>
+                  <select
+                    value={paymentFilters.orderId}
+                    onChange={(e) => handlePaymentFilterChange('orderId', e.target.value)}
+                    className="filter-select"
+                  >
+                    <option value="All">All Orders</option>
+                    {uniqueOrderIds.map(orderId => (
+                      <option key={orderId} value={orderId}>Order #{orderId}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Filter Results */}
+              <div className="filter-results-card mt-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
+                      <ApperIcon name="Search" className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold text-emerald-800 dark:text-emerald-200">
+                        {filteredPayments.length} Payments Found
+                      </p>
+                      <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                        Out of {payments.length} total payments
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Payments List */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+              {filteredPayments.map((payment) => {
+                const relatedOrder = orders.find(order => order.id === payment.orderId)
+                const paymentStatusColors = {
+                  completed: 'payment-completed',
+                  pending: 'payment-pending',
+                  partial: 'payment-partial',
+                  failed: 'payment-failed'
+                }
+
+                return (
+                  <motion.div
+                    key={payment.id}
+                    layout
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="card-elegant"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h4 className="text-lg font-semibold text-surface-900 dark:text-surface-100">
+                          Payment #{payment.id}
+                        </h4>
+                        <p className="text-sm text-surface-600 dark:text-surface-400">
+                          Order #{payment.orderId} • {relatedOrder?.customerName || 'Unknown'}
+                        </p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${paymentStatusColors[payment.status]}`}>
+                        {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                      </span>
+                    </div>
+
+                    <div className="space-y-3 mb-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-surface-600 dark:text-surface-400">Amount:</span>
+                        <span className="font-bold text-lg text-surface-900 dark:text-surface-100">
+                          ${payment.amount.toFixed(2)}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-surface-600 dark:text-surface-400">Method:</span>
+                        <span className={`px-2 py-1 rounded-lg text-xs font-medium payment-method-${payment.paymentMethod.toLowerCase()}`}>
+                          {payment.paymentMethod}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-surface-600 dark:text-surface-400">Time:</span>
+                        <span className="text-xs text-surface-500 dark:text-surface-400">
+                          {payment.timestamp.toLocaleString()}
+                        </span>
+                      </div>
+
+                      {payment.notes && (
+                        <div>
+                          <span className="text-sm text-surface-600 dark:text-surface-400">Notes:</span>
+                          <p className="text-sm text-surface-700 dark:text-surface-300 mt-1">
+                            {payment.notes}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Payment Actions */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => deletePayment(payment.id)}
+                          className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg text-xs font-medium transition-all duration-200 flex items-center space-x-1"
+                        >
+                          <ApperIcon name="Trash2" className="w-3 h-3" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Status Update Buttons */}
+                    <div className="flex flex-wrap gap-2">
+                      {['pending', 'completed', 'partial', 'failed'].map((status) => (
+                        <button
+                          key={status}
+                          onClick={() => updatePaymentStatus(payment.id, status)}
+                          disabled={payment.status === status}
+                          className={`px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${
+                            payment.status === status
+                              ? 'bg-surface-200 text-surface-600 cursor-not-allowed'
+                              : 'bg-surface-100 hover:bg-surface-200 text-surface-700 hover:text-surface-900'
+                          }`}
+                        >
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </div>
+
+            {filteredPayments.length === 0 && (
+              <div className="card-elegant text-center py-12">
+                <ApperIcon name="CreditCard" className="w-16 h-16 mx-auto mb-4 text-surface-400" />
+                <h3 className="text-lg font-medium text-surface-900 dark:text-surface-100 mb-2">
+                  No Payments Found
+                </h3>
+                <p className="text-surface-600 dark:text-surface-400 mb-4">
+                  {payments.length === 0 
+                    ? 'No payments have been recorded yet.' 
+                    : 'No payments match your current filters.'}
+                </p>
+                <button
+                  onClick={() => setIsAddPaymentModalOpen(true)}
+                  className="btn-primary flex items-center space-x-2 mx-auto"
+                >
+                  <ApperIcon name="Plus" className="w-4 h-4" />
+                  <span>Record First Payment</span>
+                </button>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+
 
       </AnimatePresence>
 
@@ -1395,6 +1820,148 @@ const MainFeature = () => {
         onClose={() => setIsAddMenuItemModalOpen(false)}
         onAddMenuItem={addMenuItem}
       />
+
+      {/* Add Payment Modal */}
+      {isAddPaymentModalOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="modal-backdrop"
+          onClick={() => setIsAddPaymentModalOpen(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2 className="text-xl font-semibold text-surface-900 dark:text-surface-100 flex items-center">
+                <ApperIcon name="CreditCard" className="w-5 h-5 mr-2 text-primary" />
+                Record Payment
+              </h2>
+              <button
+                onClick={() => setIsAddPaymentModalOpen(false)}
+                className="p-2 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
+              >
+                <ApperIcon name="X" className="w-5 h-5 text-surface-500" />
+              </button>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault()
+              const formData = new FormData(e.target)
+              const paymentData = {
+                orderId: formData.get('orderId'),
+                amount: parseFloat(formData.get('amount')),
+                paymentMethod: formData.get('paymentMethod'),
+                notes: formData.get('notes'),
+                orderTotal: orders.find(o => o.id === formData.get('orderId'))?.totalAmount || 0
+              }
+              
+              if (!paymentData.orderId) {
+                toast.error('Please select an order')
+                return
+              }
+              if (!paymentData.amount || paymentData.amount <= 0) {
+                toast.error('Please enter a valid payment amount')
+                return
+              }
+              
+              addPayment(paymentData)
+              setIsAddPaymentModalOpen(false)
+              e.target.reset()
+            }}>
+              <div className="modal-body space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                      Select Order *
+                    </label>
+                    <select
+                      name="orderId"
+                      className="input-modern"
+                      required
+                    >
+                      <option value="">Choose an order</option>
+                      {orders.filter(order => order.status !== 'completed').map(order => (
+                        <option key={order.id} value={order.id}>
+                          Order #{order.id} - {order.customerName} (${order.totalAmount.toFixed(2)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                      Payment Method *
+                    </label>
+                    <select
+                      name="paymentMethod"
+                      className="input-modern"
+                      required
+                    >
+                      <option value="Cash">Cash</option>
+                      <option value="Card">Credit/Debit Card</option>
+                      <option value="UPI">UPI</option>
+                      <option value="Bank Transfer">Bank Transfer</option>
+                      <option value="Check">Check</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                    Payment Amount *
+                  </label>
+                  <input
+                    type="number"
+                    name="amount"
+                    step="0.01"
+                    min="0.01"
+                    className="input-modern"
+                    placeholder="Enter amount received"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                    Notes (Optional)
+                  </label>
+                  <textarea
+                    name="notes"
+                    className="input-modern"
+                    rows={3}
+                    placeholder="Additional notes about the payment..."
+                  />
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  onClick={() => setIsAddPaymentModalOpen(false)}
+                  className="px-4 py-2 text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary flex items-center space-x-2"
+                >
+                  <ApperIcon name="Save" className="w-4 h-4" />
+                  <span>Record Payment</span>
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </motion.div>
+      )}
+
     </div>
   )
 }

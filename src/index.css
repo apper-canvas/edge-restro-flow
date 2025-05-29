@@ -318,4 +318,153 @@
   .stock-indicator {
     @apply text-xs;
   }
+
+/* Payment Management Styles */
+.payment-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+}
+
+.payment-card {
+  @apply relative;
+}
+
+.payment-completed {
+  @apply bg-green-100 text-green-800 border-green-200;
+}
+
+.payment-pending {
+  @apply bg-amber-100 text-amber-800 border-amber-200;
+}
+
+.payment-partial {
+  @apply bg-blue-100 text-blue-800 border-blue-200;
+}
+
+.payment-failed {
+  @apply bg-red-100 text-red-800 border-red-200;
+}
+
+.payment-method-cash {
+  @apply bg-green-100 text-green-800 border border-green-200;
+}
+
+.payment-method-card {
+  @apply bg-blue-100 text-blue-800 border border-blue-200;
+}
+
+.payment-method-upi {
+  @apply bg-purple-100 text-purple-800 border border-purple-200;
+}
+
+.payment-method-bank {
+  @apply bg-indigo-100 text-indigo-800 border border-indigo-200;
+}
+
+.payment-method-check {
+  @apply bg-amber-100 text-amber-800 border border-amber-200;
+}
+
+.payment-status {
+  @apply text-xs font-medium px-2 py-1 rounded-full;
+}
+
+.payment-status.completed {
+  @apply bg-green-100 text-green-800 border border-green-200;
+}
+
+.payment-status.pending {
+  @apply bg-amber-100 text-amber-800 border border-amber-200;
+}
+
+.payment-status.partial {
+  @apply bg-blue-100 text-blue-800 border border-blue-200;
+}
+
+.payment-status.failed {
+  @apply bg-red-100 text-red-800 border border-red-200;
+}
+
+.payment-alert {
+  @apply bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-700 rounded-xl p-4;
+}
+
+.payment-alert.overdue {
+  @apply bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border-red-200 dark:border-red-700 animate-pulse-slow;
+}
+
+.payment-alert.reminder {
+  @apply bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 border-amber-200 dark:border-amber-700 animate-bounce-gentle;
+}
+
+.payment-summary {
+  @apply bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-700;
+}
+
+.payment-method-button {
+  @apply px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border-2 hover:shadow-md transform hover:-translate-y-0.5;
+}
+
+.payment-method-active {
+  @apply bg-primary text-white border-primary shadow-lg;
+}
+
+.payment-method-inactive {
+  @apply bg-white dark:bg-surface-800 text-surface-700 dark:text-surface-300 border-surface-300 dark:border-surface-600 hover:border-primary hover:text-primary;
+}
+
+/* Payment Modal Enhancements */
+.payment-modal-header {
+  @apply bg-gradient-to-r from-primary to-primary-dark text-white rounded-t-2xl p-6;
+}
+
+.payment-input-group {
+  @apply space-y-2;
+}
+
+.payment-amount-input {
+  @apply text-2xl font-bold text-center;
+}
+
+.payment-summary-card {
+  @apply bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl p-4 border border-emerald-200 dark:border-emerald-700;
+}
+
+/* Payment History Styles */
+.payment-history-card {
+  @apply transform transition-all duration-300 hover:scale-105;
+}
+
+.payment-timeline {
+  @apply relative pl-6;
+}
+
+.payment-timeline::before {
+  content: '';
+  @apply absolute left-2 top-0 bottom-0 w-px bg-surface-200 dark:bg-surface-700;
+}
+
+.payment-timeline-item {
+  @apply relative mb-6 last:mb-0;
+}
+
+.payment-timeline-item::before {
+  content: '';
+  @apply absolute -left-4 top-2 w-3 h-3 bg-primary rounded-full border-2 border-white dark:border-surface-800;
+}
+
+/* Responsive Payment Styles */
+@media (max-width: 640px) {
+  .payment-grid {
+    @apply grid-cols-1 gap-4;
+  }
+  
+  .payment-method-button {
+    @apply text-xs px-2 py-1;
+  }
+  
+  .payment-status {
+    @apply text-xs px-1 py-0.5;
+  }
+}
+
 }
