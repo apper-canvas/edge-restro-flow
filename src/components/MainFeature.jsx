@@ -1198,7 +1198,8 @@ const MainFeature = () => {
               })}
             </div>
           </motion.div>
-        }
+        )}
+
 
       </AnimatePresence>
 
@@ -1244,7 +1245,5 @@ const MainFeature = () => {
     </div>
   )
 }
-}
-
 
 export default MainFeature
