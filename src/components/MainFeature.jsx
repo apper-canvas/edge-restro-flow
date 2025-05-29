@@ -1219,7 +1219,9 @@ const MainFeature = () => {
                         : item.inventory.currentStock <= item.inventory.minThreshold && item.inventory.currentStock > 0
                         ? 'animate-bounce-gentle border-amber-400'
                         : ''
-                    >{
+                    }`}
+                  >
+
                     {/* Item Header */}
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
@@ -1240,6 +1242,7 @@ const MainFeature = () => {
                           <ApperIcon name="Bell" className="w-3 h-3 text-red-600 animate-wiggle" />
                         )}
                       </div>
+                    </div> {/* Closing div for item header */}
 
                     {/* Stock Information */}
                     <div className="space-y-3 mb-4">
