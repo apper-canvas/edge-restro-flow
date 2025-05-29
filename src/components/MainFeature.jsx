@@ -525,6 +525,7 @@ const MainFeature = () => {
             </div>
           </motion.div>
         )}
+      </AnimatePresence>
 
       {/* Add Order Modal */}
       <AddOrderModal
@@ -534,8 +535,6 @@ const MainFeature = () => {
         menuItems={menuItems}
         tables={tables}
       />
-
-      </AnimatePresence>
     </div>
   )
 }

@@ -98,6 +98,7 @@
 
 .responsive-margin {
   @apply mx-4 sm:mx-6 lg:mx-8;
+}
 
 /* Modal Styles */
 .modal-backdrop {
@@ -130,6 +131,4 @@
 
 .quantity-input {
   @apply w-16 px-2 py-1 border border-surface-300 dark:border-surface-600 rounded bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-center;
-}
-
 }
