@@ -133,7 +133,8 @@
   @apply w-16 px-2 py-1 border border-surface-300 dark:border-surface-600 rounded bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-center;
 
 .filter-grid {
-  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  @apply grid grid-cols-1 sm:grid-cols-2 gap-4;
 }
+
 
 }

@@ -84,14 +84,9 @@ const MainFeature = () => {
   // Filter states
   const [filters, setFilters] = useState({
     status: 'All',
-    tableNumber: 'All',
-    customerName: '',
-    dateRange: 'All',
-    customDateFrom: '',
-    customDateTo: '',
-    amountFrom: '',
-    amountTo: ''
+    tableNumber: 'All'
   })
+
 
 
   const [isAddMenuItemModalOpen, setIsAddMenuItemModalOpen] = useState(false)
@@ -183,6 +178,7 @@ const MainFeature = () => {
   }
 
   // Filter functions
+  // Filter functions
   const filterOrders = () => {
     return orders.filter(order => {
       // Status filter
@@ -195,74 +191,19 @@ const MainFeature = () => {
         return false
       }
 
-      // Customer name filter
-      if (filters.customerName && !order.customerName.toLowerCase().includes(filters.customerName.toLowerCase())) {
-        return false
-      }
-
-      // Amount range filter
-      if (filters.amountFrom && order.totalAmount < parseFloat(filters.amountFrom)) {
-        return false
-      }
-      if (filters.amountTo && order.totalAmount > parseFloat(filters.amountTo)) {
-        return false
-      }
-
-      // Date range filter
-      if (filters.dateRange !== 'All') {
-        const orderDate = new Date(order.timestamp)
-        const today = new Date()
-        const yesterday = new Date(today)
-        yesterday.setDate(yesterday.getDate() - 1)
-        const weekAgo = new Date(today)
-        weekAgo.setDate(weekAgo.getDate() - 7)
-        const monthAgo = new Date(today)
-        monthAgo.setMonth(monthAgo.getMonth() - 1)
-
-        switch (filters.dateRange) {
-          case 'Today':
-            if (orderDate.toDateString() !== today.toDateString()) return false
-            break
-          case 'Yesterday':
-            if (orderDate.toDateString() !== yesterday.toDateString()) return false
-            break
-          case 'This Week':
-            if (orderDate < weekAgo) return false
-            break
-          case 'This Month':
-            if (orderDate < monthAgo) return false
-            break
-          case 'Custom':
-            if (filters.customDateFrom) {
-              const fromDate = new Date(filters.customDateFrom)
-              if (orderDate < fromDate) return false
-            }
-            if (filters.customDateTo) {
-              const toDate = new Date(filters.customDateTo)
-              toDate.setHours(23, 59, 59, 999) // End of day
-              if (orderDate > toDate) return false
-            }
-            break
-        }
-      }
-
       return true
     })
   }
 
+
   const clearAllFilters = () => {
     setFilters({
       status: 'All',
-      tableNumber: 'All',
-      customerName: '',
-      dateRange: 'All',
-      customDateFrom: '',
-      customDateTo: '',
-      amountFrom: '',
-      amountTo: ''
+      tableNumber: 'All'
     })
     toast.success('All filters cleared')
   }
+
 
   const handleFilterChange = (filterType, value) => {
     setFilters(prev => ({ ...prev, [filterType]: value }))
@@ -429,96 +370,6 @@ const MainFeature = () => {
                   </select>
                 </div>
 
-                {/* Customer Name Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
-                    Customer Name
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Search by name..."
-                    value={filters.customerName}
-                    onChange={(e) => handleFilterChange('customerName', e.target.value)}
-                    className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 placeholder-surface-500 text-sm"
-                  />
-                </div>
-
-                {/* Date Range Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
-                    Date Range
-                  </label>
-                  <select
-                    value={filters.dateRange}
-                    onChange={(e) => handleFilterChange('dateRange', e.target.value)}
-                    className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-sm"
-                  >
-                    <option value="All">All Time</option>
-                    <option value="Today">Today</option>
-                    <option value="Yesterday">Yesterday</option>
-                    <option value="This Week">This Week</option>
-                    <option value="This Month">This Month</option>
-                    <option value="Custom">Custom Range</option>
-                  </select>
-                </div>
-
-                {/* Custom Date Range */}
-                {filters.dateRange === 'Custom' && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
-                        From Date
-                      </label>
-                      <input
-                        type="date"
-                        value={filters.customDateFrom}
-                        onChange={(e) => handleFilterChange('customDateFrom', e.target.value)}
-                        className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
-                        To Date
-                      </label>
-                      <input
-                        type="date"
-                        value={filters.customDateTo}
-                        onChange={(e) => handleFilterChange('customDateTo', e.target.value)}
-                        className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-sm"
-                      />
-                    </div>
-                  </>
-                )}
-
-                {/* Amount Range Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
-                    Min Amount ($)
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
-                    value={filters.amountFrom}
-                    onChange={(e) => handleFilterChange('amountFrom', e.target.value)}
-                    className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 placeholder-surface-500 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
-                    Max Amount ($)
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="999.99"
-                    step="0.01"
-                    min="0"
-                    value={filters.amountTo}
-                    onChange={(e) => handleFilterChange('amountTo', e.target.value)}
-                    className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 placeholder-surface-500 text-sm"
-                  />
-                </div>
               </div>
 
               {/* Filter Results Summary */}
