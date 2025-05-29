@@ -58,7 +58,15 @@ const MainFeature = () => {
       price: 16.99,
       category: 'Main Course',
       available: true,
-      imageUrl: 'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=300&h=200&fit=crop'
+      imageUrl: 'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=300&h=200&fit=crop',
+      inventory: {
+        currentStock: 25,
+        minThreshold: 5,
+        unit: 'portions',
+        supplier: 'Local Ingredients Co.',
+        lastRestocked: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+        costPerUnit: 8.50
+      }
     },
     {
       id: '2',
@@ -67,7 +75,15 @@ const MainFeature = () => {
       price: 12.50,
       category: 'Appetizer',
       available: true,
-      imageUrl: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=300&h=200&fit=crop'
+      imageUrl: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=300&h=200&fit=crop',
+      inventory: {
+        currentStock: 3,
+        minThreshold: 8,
+        unit: 'portions',
+        supplier: 'Fresh Greens Supplier',
+        lastRestocked: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+        costPerUnit: 6.25
+      }
     },
     {
       id: '3',
@@ -76,7 +92,15 @@ const MainFeature = () => {
       price: 24.99,
       category: 'Main Course',
       available: true,
-      imageUrl: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=300&h=200&fit=crop'
+      imageUrl: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=300&h=200&fit=crop',
+      inventory: {
+        currentStock: 0,
+        minThreshold: 4,
+        unit: 'portions',
+        supplier: 'Ocean Fresh Seafood',
+        lastRestocked: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+        costPerUnit: 15.75
+      }
     }
   ])
 
@@ -100,7 +124,8 @@ const MainFeature = () => {
   const tabs = [
     { id: 'orders', label: 'Orders', icon: 'ClipboardList' },
     { id: 'tables', label: 'Tables', icon: 'Grid3X3' },
-    { id: 'menu', label: 'Menu', icon: 'MenuSquare' }
+    { id: 'menu', label: 'Menu', icon: 'MenuSquare' },
+    { id: 'inventory', label: 'Inventory', icon: 'Package' }
   ]
 
   const statusColors = {
@@ -132,6 +157,33 @@ const MainFeature = () => {
     toast.success(`Table ${tableId} status updated to ${newStatus}`)
   }
 
+  // Check for low stock alerts
+  useEffect(() => {
+    const lowStockItems = menuItems.filter(item => 
+      item.inventory.currentStock <= item.inventory.minThreshold && item.inventory.currentStock > 0
+    )
+    const outOfStockItems = menuItems.filter(item => item.inventory.currentStock === 0)
+
+    if (lowStockItems.length > 0) {
+      lowStockItems.forEach(item => {
+        toast.warning(`Low stock alert: ${item.name} (${item.inventory.currentStock} ${item.inventory.unit} remaining)`, {
+          toastId: `low-stock-${item.id}`,
+          autoClose: 5000
+        })
+      })
+    }
+
+    if (outOfStockItems.length > 0) {
+      outOfStockItems.forEach(item => {
+        toast.error(`Out of stock: ${item.name}`, {
+          toastId: `out-of-stock-${item.id}`,
+          autoClose: false
+        })
+      })
+    }
+  }, [menuItems])
+
+
   const addOrder = (orderData) => {
     const order = {
       id: String(orders.length + 1).padStart(3, '0'),
@@ -154,6 +206,27 @@ const MainFeature = () => {
     ))
     
     toast.success('New order added successfully!')
+    // Reduce inventory for ordered items
+    orderData.items.forEach(orderItem => {
+      setMenuItems(prevItems => 
+        prevItems.map(menuItem => {
+          if (menuItem.name === orderItem.name) {
+            const newStock = Math.max(0, menuItem.inventory.currentStock - orderItem.quantity)
+            return {
+              ...menuItem,
+              inventory: {
+                ...menuItem.inventory,
+                currentStock: newStock
+              },
+              available: newStock > 0
+            }
+          }
+          return menuItem
+        })
+      )
+    })
+    
+
   }
 
   const editOrder = (order) => {
@@ -221,8 +294,20 @@ const MainFeature = () => {
       imageUrl: menuItemData.imageUrl
     }
 
-    setMenuItems([...menuItems, menuItem])
-    toast.success('Menu item added successfully!')
+    const newMenuItem = {
+      ...menuItem,
+      inventory: {
+        currentStock: menuItemData.initialStock || 10,
+        minThreshold: menuItemData.minThreshold || 5,
+        unit: menuItemData.unit || 'portions',
+        supplier: menuItemData.supplier || 'Default Supplier',
+        lastRestocked: new Date(),
+        costPerUnit: menuItemData.costPerUnit || 0
+      }
+    }
+
+    setMenuItems([...menuItems, newMenuItem])
+
   }
 
 
@@ -272,6 +357,90 @@ const MainFeature = () => {
 
   // Get unique table numbers for filter dropdown
   const uniqueTableNumbers = [...new Set(orders.map(order => order.tableNumber))].sort((a, b) => a - b)
+
+  // Inventory Management Functions
+  const updateInventoryStock = (itemId, newStock, reason = 'Manual adjustment') => {
+    setMenuItems(menuItems.map(item => {
+      if (item.id === itemId) {
+        const updatedItem = {
+          ...item,
+          inventory: {
+            ...item.inventory,
+            currentStock: Math.max(0, newStock)
+          },
+          available: newStock > 0
+        }
+        
+        // Log the inventory change
+        console.log(`Inventory Update - ${item.name}: ${item.inventory.currentStock} -> ${newStock} (${reason})`)
+        
+        return updatedItem
+      }
+      return item
+    }))
+    
+    toast.success(`Inventory updated successfully`)
+  }
+
+  const restockItem = (itemId, quantity) => {
+    setMenuItems(menuItems.map(item => {
+      if (item.id === itemId) {
+        const newStock = item.inventory.currentStock + quantity
+        return {
+          ...item,
+          inventory: {
+            ...item.inventory,
+            currentStock: newStock,
+            lastRestocked: new Date()
+          },
+          available: true
+        }
+      }
+      return item
+    }))
+    
+    const item = menuItems.find(item => item.id === itemId)
+    toast.success(`${item.name} restocked: +${quantity} ${item.inventory.unit}`)
+  }
+
+  const updateMinThreshold = (itemId, newThreshold) => {
+    setMenuItems(menuItems.map(item => {
+      if (item.id === itemId) {
+        return {
+          ...item,
+          inventory: {
+            ...item.inventory,
+            minThreshold: Math.max(0, newThreshold)
+          }
+        }
+      }
+      return item
+    }))
+    
+    const item = menuItems.find(item => item.id === itemId)
+    toast.success(`${item.name} minimum threshold updated to ${newThreshold}`)
+  }
+
+  const getInventoryStatus = (item) => {
+    if (item.inventory.currentStock === 0) return 'out-of-stock'
+    if (item.inventory.currentStock <= item.inventory.minThreshold) return 'low-stock'
+    return 'in-stock'
+  }
+
+  const getInventoryStats = () => {
+    const totalItems = menuItems.length
+    const inStock = menuItems.filter(item => item.inventory.currentStock > item.inventory.minThreshold).length
+    const lowStock = menuItems.filter(item => 
+      item.inventory.currentStock <= item.inventory.minThreshold && item.inventory.currentStock > 0
+    ).length
+    const outOfStock = menuItems.filter(item => item.inventory.currentStock === 0).length
+    
+    return { totalItems, inStock, lowStock, outOfStock }
+  }
+
+  const inventoryStats = getInventoryStats()
+
+
 
 
   return (
@@ -822,6 +991,215 @@ const MainFeature = () => {
             </div>
           </motion.div>
         )}
+        
+        {activeTab === 'inventory' && (
+          <motion.div
+            key="inventory"
+            initial={{ x: 20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -20, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-6"
+          >
+            {/* Inventory Stats Overview */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="card-elegant text-center">
+                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <ApperIcon name="Check" className="w-6 h-6 text-green-600" />
+                </div>
+                <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">{inventoryStats.inStock}</p>
+                <p className="text-sm text-surface-600 dark:text-surface-400">In Stock</p>
+              </div>
+              
+              <div className="card-elegant text-center">
+                <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <ApperIcon name="AlertTriangle" className="w-6 h-6 text-amber-600" />
+                </div>
+                <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">{inventoryStats.lowStock}</p>
+                <p className="text-sm text-surface-600 dark:text-surface-400">Low Stock</p>
+              </div>
+              
+              <div className="card-elegant text-center">
+                <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <ApperIcon name="X" className="w-6 h-6 text-red-600" />
+                </div>
+                <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">{inventoryStats.outOfStock}</p>
+                <p className="text-sm text-surface-600 dark:text-surface-400">Out of Stock</p>
+              </div>
+              
+              <div className="card-elegant text-center">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <ApperIcon name="Package" className="w-6 h-6 text-blue-600" />
+                </div>
+                <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">{inventoryStats.totalItems}</p>
+                <p className="text-sm text-surface-600 dark:text-surface-400">Total Items</p>
+              </div>
+            </div>
+
+            {/* Inventory Management Header */}
+            <div className="card-elegant">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-semibold text-surface-900 dark:text-surface-100 flex items-center">
+                    <ApperIcon name="Package" className="w-5 h-5 mr-2 text-primary" />
+                    Inventory Management
+                  </h3>
+                  <p className="text-sm text-surface-600 dark:text-surface-400 mt-1">
+                    Monitor stock levels and manage inventory for all menu items
+                  </p>
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => {
+                      menuItems.forEach(item => {
+                        if (item.inventory.currentStock <= item.inventory.minThreshold) {
+                          restockItem(item.id, item.inventory.minThreshold * 2)
+                        }
+                      })
+                    }}
+                    className="btn-secondary flex items-center space-x-2"
+                  >
+                    <ApperIcon name="RefreshCw" className="w-4 h-4" />
+                    <span>Auto Restock Low Items</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Inventory Grid */}
+            <div className="inventory-grid">
+              {menuItems.map((item) => {
+                const inventoryStatus = getInventoryStatus(item)
+                return (
+                  <motion.div
+                    key={item.id}
+                    layout
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className={`card-elegant overflow-hidden inventory-card ${inventoryStatus}`}
+                  >
+                    {/* Item Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-surface-900 dark:text-surface-100">{item.name}</h4>
+                        <p className="text-sm text-surface-600 dark:text-surface-400">{item.category}</p>
+                      </div>
+                      <div className={`px-2 py-1 rounded-full text-xs font-medium stock-status ${inventoryStatus}`}>
+                        {inventoryStatus === 'in-stock' && '✅ In Stock'}
+                        {inventoryStatus === 'low-stock' && '⚠️ Low Stock'}
+                        {inventoryStatus === 'out-of-stock' && '❌ Out of Stock'}
+                      </div>
+                    </div>
+
+                    {/* Stock Information */}
+                    <div className="space-y-3 mb-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-surface-600 dark:text-surface-400">Current Stock:</span>
+                        <span className="font-medium text-surface-900 dark:text-surface-100">
+                          {item.inventory.currentStock} {item.inventory.unit}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-surface-600 dark:text-surface-400">Min. Threshold:</span>
+                        <span className="font-medium text-surface-900 dark:text-surface-100">
+                          {item.inventory.minThreshold} {item.inventory.unit}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-surface-600 dark:text-surface-400">Supplier:</span>
+                        <span className="font-medium text-surface-900 dark:text-surface-100 text-xs">
+                          {item.inventory.supplier}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-surface-600 dark:text-surface-400">Last Restocked:</span>
+                        <span className="font-medium text-surface-900 dark:text-surface-100 text-xs">
+                          {item.inventory.lastRestocked.toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Stock Level Progress Bar */}
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-surface-500">Stock Level</span>
+                        <span className="text-xs text-surface-500">
+                          {Math.round((item.inventory.currentStock / (item.inventory.minThreshold * 2)) * 100)}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-surface-200 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full transition-all duration-300 ${
+                            inventoryStatus === 'out-of-stock' ? 'bg-red-500' :
+                            inventoryStatus === 'low-stock' ? 'bg-amber-500' : 'bg-green-500'
+                          }`}
+                          style={{ 
+                            width: `${Math.min(100, (item.inventory.currentStock / (item.inventory.minThreshold * 2)) * 100)}%` 
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* Quick Stock Adjustment */}
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => updateInventoryStock(item.id, item.inventory.currentStock - 1, 'Manual decrease')}
+                          disabled={item.inventory.currentStock === 0}
+                          className="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-800 rounded text-xs font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ApperIcon name="Minus" className="w-3 h-3" />
+                        </button>
+                        
+                        <input
+                          type="number"
+                          value={item.inventory.currentStock}
+                          onChange={(e) => updateInventoryStock(item.id, parseInt(e.target.value) || 0, 'Direct input')}
+                          className="flex-1 px-2 py-1 border border-surface-300 dark:border-surface-600 rounded text-center text-sm bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100"
+                          min="0"
+                        />
+                        
+                        <button
+                          onClick={() => updateInventoryStock(item.id, item.inventory.currentStock + 1, 'Manual increase')}
+                          className="px-2 py-1 bg-green-100 hover:bg-green-200 text-green-800 rounded text-xs font-medium transition-all duration-200"
+                        >
+                          <ApperIcon name="Plus" className="w-3 h-3" />
+                        </button>
+                      </div>
+                      
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => restockItem(item.id, 10)}
+                          className="flex-1 px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-lg text-xs font-medium transition-all duration-200 flex items-center justify-center space-x-1"
+                        >
+                          <ApperIcon name="Plus" className="w-3 h-3" />
+                          <span>Restock +10</span>
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            const newThreshold = prompt(`Enter new minimum threshold for ${item.name}:`, item.inventory.minThreshold)
+                            if (newThreshold && !isNaN(newThreshold)) {
+                              updateMinThreshold(item.id, parseInt(newThreshold))
+                            }
+                          }}
+                          className="px-3 py-1 bg-surface-100 hover:bg-surface-200 text-surface-700 rounded-lg text-xs font-medium transition-all duration-200 flex items-center space-x-1"
+                        >
+                          <ApperIcon name="Settings" className="w-3 h-3" />
+                          <span>Threshold</span>
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </div>
+          </motion.div>
+        }
+
       </AnimatePresence>
 
       {/* Add Order Modal */}
@@ -866,5 +1244,7 @@ const MainFeature = () => {
     </div>
   )
 }
+}
+
 
 export default MainFeature
