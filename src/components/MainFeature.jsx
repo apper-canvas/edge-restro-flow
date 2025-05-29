@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-toastify'
 import ApperIcon from './ApperIcon'
 import AddOrderModal from './AddOrderModal'
+import AddMenuItemModal from './AddMenuItemModal'
+
 
 
 const MainFeature = () => {
@@ -79,14 +81,10 @@ const MainFeature = () => {
   ])
 
   const [isAddOrderModalOpen, setIsAddOrderModalOpen] = useState(false)
+  const [isAddMenuItemModalOpen, setIsAddMenuItemModalOpen] = useState(false)
 
 
-  const [newMenuItem, setNewMenuItem] = useState({
-    name: '',
-    description: '',
-    price: '',
-    category: 'Main Course'
-  })
+
 
   const tabs = [
     { id: 'orders', label: 'Orders', icon: 'ClipboardList' },
@@ -146,26 +144,22 @@ const MainFeature = () => {
   }
 
 
-  const addMenuItem = () => {
-    if (!newMenuItem.name || !newMenuItem.description || !newMenuItem.price) {
-      toast.error('Please fill in all menu item details')
-      return
-    }
-
+  const addMenuItem = (menuItemData) => {
     const menuItem = {
       id: String(menuItems.length + 1),
-      name: newMenuItem.name,
-      description: newMenuItem.description,
-      price: parseFloat(newMenuItem.price),
-      category: newMenuItem.category,
+      name: menuItemData.name,
+      description: menuItemData.description,
+      price: menuItemData.price,
+      category: menuItemData.category,
       available: true,
-      imageUrl: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=300&h=200&fit=crop'
+      imageUrl: menuItemData.imageUrl
     }
 
     setMenuItems([...menuItems, menuItem])
-    setNewMenuItem({ name: '', description: '', price: '', category: 'Main Course' })
     toast.success('Menu item added successfully!')
   }
+
+
 
   const toggleMenuItemAvailability = (itemId) => {
     setMenuItems(menuItems.map(item => 
@@ -429,53 +423,27 @@ const MainFeature = () => {
           >
             {/* Add New Menu Item */}
             <div className="card-elegant">
-              <h3 className="text-lg sm:text-xl font-semibold text-surface-900 dark:text-surface-100 mb-4 flex items-center">
-                <ApperIcon name="Plus" className="w-5 h-5 mr-2 text-primary" />
-                Add Menu Item
-              </h3>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
-                <input
-                  type="text"
-                  placeholder="Item Name"
-                  value={newMenuItem.name}
-                  onChange={(e) => setNewMenuItem({...newMenuItem, name: e.target.value})}
-                  className="input-modern"
-                />
-                <input
-                  type="text"
-                  placeholder="Description"
-                  value={newMenuItem.description}
-                  onChange={(e) => setNewMenuItem({...newMenuItem, description: e.target.value})}
-                  className="input-modern"
-                />
-                <input
-                  type="number"
-                  step="0.01"
-                  placeholder="Price"
-                  value={newMenuItem.price}
-                  onChange={(e) => setNewMenuItem({...newMenuItem, price: e.target.value})}
-                  className="input-modern"
-                />
-                <select
-                  value={newMenuItem.category}
-                  onChange={(e) => setNewMenuItem({...newMenuItem, category: e.target.value})}
-                  className="input-modern"
-                >
-                  <option value="Appetizer">Appetizer</option>
-                  <option value="Main Course">Main Course</option>
-                  <option value="Dessert">Dessert</option>
-                  <option value="Beverage">Beverage</option>
-                </select>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg sm:text-xl font-semibold text-surface-900 dark:text-surface-100 flex items-center">
+                    <ApperIcon name="Plus" className="w-5 h-5 mr-2 text-primary" />
+                    Add Menu Item
+                  </h3>
+                  <p className="text-sm text-surface-600 dark:text-surface-400 mt-1">
+                    Create a new menu item for your restaurant
+                  </p>
+                </div>
                 <button
-                  onClick={addMenuItem}
-                  className="btn-primary w-full flex items-center justify-center space-x-2"
+                  onClick={() => setIsAddMenuItemModalOpen(true)}
+                  className="btn-primary flex items-center space-x-2"
                 >
                   <ApperIcon name="Plus" className="w-4 h-4" />
                   <span>Add Item</span>
                 </button>
               </div>
             </div>
+
+
 
             {/* Menu Items Grid */}
             <div className="menu-grid">
@@ -534,6 +502,14 @@ const MainFeature = () => {
         onAddOrder={addOrder}
         menuItems={menuItems}
         tables={tables}
+      />
+
+      {/* Add Menu Item Modal */}
+      <AddMenuItemModal
+        isOpen={isAddMenuItemModalOpen}
+        onClose={() => setIsAddMenuItemModalOpen(false)}
+        onAddMenuItem={addMenuItem}
+      />
       />
     </div>
   )
