@@ -81,6 +81,19 @@ const MainFeature = () => {
   ])
 
   const [isAddOrderModalOpen, setIsAddOrderModalOpen] = useState(false)
+  // Filter states
+  const [filters, setFilters] = useState({
+    status: 'All',
+    tableNumber: 'All',
+    customerName: '',
+    dateRange: 'All',
+    customDateFrom: '',
+    customDateTo: '',
+    amountFrom: '',
+    amountTo: ''
+  })
+
+
   const [isAddMenuItemModalOpen, setIsAddMenuItemModalOpen] = useState(false)
 
 
@@ -168,6 +181,99 @@ const MainFeature = () => {
     const item = menuItems.find(item => item.id === itemId)
     toast.success(`${item.name} ${item.available ? 'disabled' : 'enabled'}`)
   }
+
+  // Filter functions
+  const filterOrders = () => {
+    return orders.filter(order => {
+      // Status filter
+      if (filters.status !== 'All' && order.status !== filters.status) {
+        return false
+      }
+
+      // Table number filter
+      if (filters.tableNumber !== 'All' && order.tableNumber.toString() !== filters.tableNumber) {
+        return false
+      }
+
+      // Customer name filter
+      if (filters.customerName && !order.customerName.toLowerCase().includes(filters.customerName.toLowerCase())) {
+        return false
+      }
+
+      // Amount range filter
+      if (filters.amountFrom && order.totalAmount < parseFloat(filters.amountFrom)) {
+        return false
+      }
+      if (filters.amountTo && order.totalAmount > parseFloat(filters.amountTo)) {
+        return false
+      }
+
+      // Date range filter
+      if (filters.dateRange !== 'All') {
+        const orderDate = new Date(order.timestamp)
+        const today = new Date()
+        const yesterday = new Date(today)
+        yesterday.setDate(yesterday.getDate() - 1)
+        const weekAgo = new Date(today)
+        weekAgo.setDate(weekAgo.getDate() - 7)
+        const monthAgo = new Date(today)
+        monthAgo.setMonth(monthAgo.getMonth() - 1)
+
+        switch (filters.dateRange) {
+          case 'Today':
+            if (orderDate.toDateString() !== today.toDateString()) return false
+            break
+          case 'Yesterday':
+            if (orderDate.toDateString() !== yesterday.toDateString()) return false
+            break
+          case 'This Week':
+            if (orderDate < weekAgo) return false
+            break
+          case 'This Month':
+            if (orderDate < monthAgo) return false
+            break
+          case 'Custom':
+            if (filters.customDateFrom) {
+              const fromDate = new Date(filters.customDateFrom)
+              if (orderDate < fromDate) return false
+            }
+            if (filters.customDateTo) {
+              const toDate = new Date(filters.customDateTo)
+              toDate.setHours(23, 59, 59, 999) // End of day
+              if (orderDate > toDate) return false
+            }
+            break
+        }
+      }
+
+      return true
+    })
+  }
+
+  const clearAllFilters = () => {
+    setFilters({
+      status: 'All',
+      tableNumber: 'All',
+      customerName: '',
+      dateRange: 'All',
+      customDateFrom: '',
+      customDateTo: '',
+      amountFrom: '',
+      amountTo: ''
+    })
+    toast.success('All filters cleared')
+  }
+
+  const handleFilterChange = (filterType, value) => {
+    setFilters(prev => ({ ...prev, [filterType]: value }))
+  }
+
+  // Get filtered orders
+  const filteredOrders = filterOrders()
+
+  // Get unique table numbers for filter dropdown
+  const uniqueTableNumbers = [...new Set(orders.map(order => order.tableNumber))].sort((a, b) => a - b)
+
 
   return (
     <div className="w-full">
@@ -270,6 +376,166 @@ const MainFeature = () => {
                 </button>
               </div>
             </div>
+
+            {/* Order Filters */}
+            <div className="card-elegant">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg sm:text-xl font-semibold text-surface-900 dark:text-surface-100 flex items-center">
+                  <ApperIcon name="Filter" className="w-5 h-5 mr-2 text-primary" />
+                  Filter Orders
+                </h3>
+                <button
+                  onClick={clearAllFilters}
+                  className="text-sm text-surface-600 dark:text-surface-400 hover:text-primary transition-colors flex items-center space-x-1"
+                >
+                  <ApperIcon name="X" className="w-4 h-4" />
+                  <span>Clear All</span>
+                </button>
+              </div>
+
+              <div className="filter-grid gap-4">
+                {/* Status Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                    Status
+                  </label>
+                  <select
+                    value={filters.status}
+                    onChange={(e) => handleFilterChange('status', e.target.value)}
+                    className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-sm"
+                  >
+                    <option value="All">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="preparing">Preparing</option>
+                    <option value="ready">Ready</option>
+                    <option value="served">Served</option>
+                  </select>
+                </div>
+
+                {/* Table Number Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                    Table
+                  </label>
+                  <select
+                    value={filters.tableNumber}
+                    onChange={(e) => handleFilterChange('tableNumber', e.target.value)}
+                    className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-sm"
+                  >
+                    <option value="All">All Tables</option>
+                    {uniqueTableNumbers.map(tableNum => (
+                      <option key={tableNum} value={tableNum.toString()}>Table {tableNum}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Customer Name Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                    Customer Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Search by name..."
+                    value={filters.customerName}
+                    onChange={(e) => handleFilterChange('customerName', e.target.value)}
+                    className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 placeholder-surface-500 text-sm"
+                  />
+                </div>
+
+                {/* Date Range Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                    Date Range
+                  </label>
+                  <select
+                    value={filters.dateRange}
+                    onChange={(e) => handleFilterChange('dateRange', e.target.value)}
+                    className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-sm"
+                  >
+                    <option value="All">All Time</option>
+                    <option value="Today">Today</option>
+                    <option value="Yesterday">Yesterday</option>
+                    <option value="This Week">This Week</option>
+                    <option value="This Month">This Month</option>
+                    <option value="Custom">Custom Range</option>
+                  </select>
+                </div>
+
+                {/* Custom Date Range */}
+                {filters.dateRange === 'Custom' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                        From Date
+                      </label>
+                      <input
+                        type="date"
+                        value={filters.customDateFrom}
+                        onChange={(e) => handleFilterChange('customDateFrom', e.target.value)}
+                        className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                        To Date
+                      </label>
+                      <input
+                        type="date"
+                        value={filters.customDateTo}
+                        onChange={(e) => handleFilterChange('customDateTo', e.target.value)}
+                        className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-sm"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Amount Range Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                    Min Amount ($)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                    value={filters.amountFrom}
+                    onChange={(e) => handleFilterChange('amountFrom', e.target.value)}
+                    className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 placeholder-surface-500 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                    Max Amount ($)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="999.99"
+                    step="0.01"
+                    min="0"
+                    value={filters.amountTo}
+                    onChange={(e) => handleFilterChange('amountTo', e.target.value)}
+                    className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 placeholder-surface-500 text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Filter Results Summary */}
+              <div className="mt-4 pt-4 border-t border-surface-200 dark:border-surface-600">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-surface-600 dark:text-surface-400">
+                    Showing {filteredOrders.length} of {orders.length} orders
+                  </span>
+                  {filteredOrders.length !== orders.length && (
+                    <span className="text-primary font-medium">
+                      {orders.length - filteredOrders.length} orders filtered out
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
 
 
             {/* Orders List */}
@@ -393,8 +659,9 @@ const MainFeature = () => {
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {tables.map((table) => (
                   <div key={table.id} className="p-3 bg-surface-50 dark:bg-surface-700 rounded-lg">
+                      <span>Table {table.number}</span>
+
                     <div className="text-sm font-medium text-surface-900 dark:text-surface-100 mb-2">
-                      Table {table.number}
                     </div>
                     <select
                       value={table.status}
@@ -411,7 +678,6 @@ const MainFeature = () => {
             </div>
           </motion.div>
         )}
-
         {activeTab === 'menu' && (
           <motion.div
             key="menu"
@@ -454,6 +720,7 @@ const MainFeature = () => {
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   className={`card-elegant overflow-hidden ${!item.available ? 'opacity-60' : ''}`}
+
                 >
                   <div className="aspect-video bg-surface-100 dark:bg-surface-700 rounded-lg mb-4 overflow-hidden">
                     <img
@@ -509,7 +776,6 @@ const MainFeature = () => {
         isOpen={isAddMenuItemModalOpen}
         onClose={() => setIsAddMenuItemModalOpen(false)}
         onAddMenuItem={addMenuItem}
-      />
       />
     </div>
   )
