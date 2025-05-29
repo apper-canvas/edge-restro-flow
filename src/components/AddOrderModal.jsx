@@ -369,7 +369,10 @@ const AddOrderModal = ({ isOpen, onClose, onAddOrder, menuItems, tables, editMod
                 type="submit"
                 className="btn-primary flex items-center space-x-2"
                 disabled={formData.selectedItems.length === 0}
-
+              >
+                <ApperIcon name={editMode ? "Save" : "Plus"} className="w-4 h-4" />
+                <span>{editMode ? 'Update Order' : 'Add Order'}</span>
+              </button>
             </div>
           </form>
         </motion.div>
