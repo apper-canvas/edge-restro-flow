@@ -46,7 +46,10 @@
   }
   
   .status-served {
+    @apply bg-gray-100 text-gray-800 border-gray-200;
   }
+  
+
   .status-pulse {
     @apply animate-pulse-slow;
   }
@@ -191,6 +194,9 @@
 
 .filter-grid {
   @apply grid grid-cols-1 sm:grid-cols-2 gap-6;
+}
+
+/* Inventory Management Styles */
 
 /* Inventory Management Styles */
 .inventory-grid {
