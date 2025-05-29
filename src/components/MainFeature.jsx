@@ -209,25 +209,6 @@ const MainFeature = () => {
       )
 
       // Critical stock alerts (below 50% of threshold)
-      if (criticalItems.length > 0) {
-        criticalItems.forEach(item => {
-          toast.error(
-            <div className="flex items-center space-x-2">
-              <ApperIcon name="AlertTriangle" className="w-5 h-5 text-red-600" />
-              <div>
-                <div className="font-semibold">CRITICAL: {item.name}</div>
-                <div className="text-sm">Only {item.inventory.currentStock} {item.inventory.unit} remaining!</div>
-              </div>
-            </div>,
-            {
-              toastId: `critical-stock-${item.id}`,
-              autoClose: false,
-              className: 'border-l-4 border-red-500'
-            }
-          )
-        })
-      }
-
 
       // Out of stock alerts
       if (outOfStockItems.length > 0) {
