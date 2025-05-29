@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-toastify'
 import ApperIcon from './ApperIcon'
 
-const AddOrderModal = ({ isOpen, onClose, onAddOrder, menuItems, tables }) => {
+const AddOrderModal = ({ isOpen, onClose, onAddOrder, menuItems, tables, editMode = false, initialData = null }) => {
+
   const [formData, setFormData] = useState({
     tableNumber: '',
     customerName: '',
@@ -17,7 +18,21 @@ const AddOrderModal = ({ isOpen, onClose, onAddOrder, menuItems, tables }) => {
 
   // Reset form when modal opens/closes
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen && editMode && initialData) {
+      // Set form data from initial data for edit mode
+      setFormData({
+        tableNumber: initialData.tableNumber,
+        customerName: initialData.customerName,
+        selectedItems: initialData.selectedItems,
+        notes: initialData.notes
+      })
+      // Set quantities for selected items
+      const quantities = {}
+      initialData.selectedItems.forEach(item => {
+        quantities[item.id] = 1 // Default quantity, could be improved to parse from order items
+      })
+      setItemQuantities(quantities)
+    } else if (!isOpen) {
       setFormData({
         tableNumber: '',
         customerName: '',
@@ -28,7 +43,8 @@ const AddOrderModal = ({ isOpen, onClose, onAddOrder, menuItems, tables }) => {
       setSelectedCategory('All')
       setItemQuantities({})
     }
-  }, [isOpen])
+  }, [isOpen, editMode, initialData])
+
 
   // Get unique categories from menu items
   const categories = ['All', ...new Set(menuItems.map(item => item.category))]
@@ -41,9 +57,12 @@ const AddOrderModal = ({ isOpen, onClose, onAddOrder, menuItems, tables }) => {
     const isAvailable = item.available
     return matchesSearch && matchesCategory && isAvailable
   })
+  
+  // Get available tables (include current table if editing)
+  const availableTables = editMode && initialData 
+    ? tables.filter(table => table.status === 'available' || table.number.toString() === initialData.tableNumber)
+    : tables.filter(table => table.status === 'available')
 
-  // Get available tables
-  const availableTables = tables.filter(table => table.status === 'available')
 
   const handleItemSelect = (item) => {
     const isSelected = formData.selectedItems.some(selectedItem => selectedItem.id === item.id)
@@ -136,9 +155,10 @@ const AddOrderModal = ({ isOpen, onClose, onAddOrder, menuItems, tables }) => {
           {/* Modal Header */}
           <div className="modal-header">
             <h2 className="text-xl font-semibold text-surface-900 dark:text-surface-100 flex items-center">
-              <ApperIcon name="Plus" className="w-5 h-5 mr-2 text-primary" />
-              Add New Order
+              <ApperIcon name={editMode ? "Edit" : "Plus"} className="w-5 h-5 mr-2 text-primary" />
+              {editMode ? 'Edit Order' : 'Add New Order'}
             </h2>
+
             <button
               onClick={onClose}
               className="p-2 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
@@ -349,10 +369,7 @@ const AddOrderModal = ({ isOpen, onClose, onAddOrder, menuItems, tables }) => {
                 type="submit"
                 className="btn-primary flex items-center space-x-2"
                 disabled={formData.selectedItems.length === 0}
-              >
-                <ApperIcon name="Plus" className="w-4 h-4" />
-                <span>Add Order (${calculateTotal().toFixed(2)})</span>
-              </button>
+
             </div>
           </form>
         </motion.div>

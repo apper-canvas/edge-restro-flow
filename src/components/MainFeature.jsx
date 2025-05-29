@@ -90,6 +90,9 @@ const MainFeature = () => {
 
 
   const [isAddMenuItemModalOpen, setIsAddMenuItemModalOpen] = useState(false)
+  const [isEditOrderModalOpen, setIsEditOrderModalOpen] = useState(false)
+  const [editingOrder, setEditingOrder] = useState(null)
+
 
 
 
@@ -104,8 +107,10 @@ const MainFeature = () => {
     pending: 'status-pending',
     preparing: 'status-preparing',
     ready: 'status-ready',
-    served: 'status-served'
+    served: 'status-served',
+    completed: 'status-completed'
   }
+
 
   const tableStatusColors = {
     available: 'table-available',
@@ -150,6 +155,59 @@ const MainFeature = () => {
     
     toast.success('New order added successfully!')
   }
+
+  const editOrder = (order) => {
+    setEditingOrder(order)
+    setIsEditOrderModalOpen(true)
+  }
+
+  const updateOrder = (updatedOrderData) => {
+    setOrders(orders.map(order => 
+      order.id === editingOrder.id 
+        ? { 
+            ...order,
+            customerName: updatedOrderData.customerName,
+            tableNumber: updatedOrderData.tableNumber,
+            items: updatedOrderData.items.map(item => `${item.name} x${item.quantity}`),
+            totalAmount: updatedOrderData.totalAmount,
+            notes: updatedOrderData.notes
+          }
+        : order
+    ))
+    
+    // Update table status if table changed
+    if (editingOrder.tableNumber !== updatedOrderData.tableNumber) {
+      setTables(tables.map(table => {
+        if (table.number === editingOrder.tableNumber) {
+          return { ...table, status: 'available' }
+        }
+        if (table.number === updatedOrderData.tableNumber) {
+          return { ...table, status: 'occupied' }
+        }
+        return table
+      }))
+    }
+    
+    toast.success(`Order #${editingOrder.id} updated successfully!`)
+  }
+
+  const deleteOrder = (orderId) => {
+    const orderToDelete = orders.find(order => order.id === orderId)
+    
+    if (window.confirm(`Are you sure you want to delete Order #${orderId}?`)) {
+      setOrders(orders.filter(order => order.id !== orderId))
+      
+      // Update table status to available
+      setTables(tables.map(table => 
+        table.number === orderToDelete.tableNumber 
+          ? { ...table, status: 'available' } 
+          : table
+      ))
+      
+      toast.success(`Order #${orderId} deleted successfully!`)
+    }
+  }
+
 
 
   const addMenuItem = (menuItemData) => {
@@ -349,15 +407,18 @@ const MainFeature = () => {
                   Quick Status Filters
                 </h4>
                 <div className="flex flex-wrap gap-3">
-                  {['All', 'pending', 'preparing', 'ready', 'served'].map((status) => {
+                  {['All', 'pending', 'preparing', 'ready', 'served', 'completed'].map((status) => {
+
                     const isActive = filters.status === status
                     const statusLabels = {
                       'All': 'All Orders',
                       'pending': 'Pending',
                       'preparing': 'Preparing', 
                       'ready': 'Ready',
-                      'served': 'Served'
+                      'served': 'Served',
+                      'completed': 'Completed'
                     }
+
                     
                     return (
                       <button
@@ -373,8 +434,10 @@ const MainFeature = () => {
                               status === 'pending' ? 'bg-amber-400' :
                               status === 'preparing' ? 'bg-blue-400' :
                               status === 'ready' ? 'bg-green-400' :
-                              'bg-gray-400'
+                              status === 'served' ? 'bg-gray-400' :
+                              'bg-purple-400'
                             }`}></div>
+
                           )}
                           <span>{statusLabels[status]}</span>
                           {status !== 'All' && (
@@ -407,7 +470,9 @@ const MainFeature = () => {
                       <option value="pending">⏳ Pending Orders</option>
                       <option value="preparing">👨‍🍳 Currently Preparing</option>
                       <option value="ready">✅ Ready to Serve</option>
-                      <option value="served">📋 Completed Orders</option>
+                      <option value="served">📋 Served Orders</option>
+                      <option value="completed">🎉 Completed Orders</option>
+
                     </select>
                     <ApperIcon name="ChevronDown" className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-surface-400 pointer-events-none" />
                   </div>
@@ -559,8 +624,31 @@ const MainFeature = () => {
                     </span>
                   </div>
 
+                  {/* Order Actions */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => editOrder(order)}
+                        className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-lg text-xs font-medium transition-all duration-200 flex items-center space-x-1"
+                      >
+                        <ApperIcon name="Edit" className="w-3 h-3" />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        onClick={() => deleteOrder(order.id)}
+                        className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg text-xs font-medium transition-all duration-200 flex items-center space-x-1"
+                      >
+                        <ApperIcon name="Trash2" className="w-3 h-3" />
+                        <span>Delete</span>
+                      </button>
+                    </div>
+                  </div>
+
+
+                  {/* Status Update Buttons */}
                   <div className="flex flex-wrap gap-2">
-                    {['pending', 'preparing', 'ready', 'served'].map((status) => (
+                    {['pending', 'preparing', 'ready', 'served', 'completed'].map((status) => (
+
                       <button
                         key={status}
                         onClick={() => updateOrderStatus(order.id, status)}
@@ -737,6 +825,30 @@ const MainFeature = () => {
       </AnimatePresence>
 
       {/* Add Order Modal */}
+
+      {/* Edit Order Modal */}
+      {editingOrder && (
+        <AddOrderModal
+          isOpen={isEditOrderModalOpen}
+          onClose={() => {
+            setIsEditOrderModalOpen(false)
+            setEditingOrder(null)
+          }}
+          onAddOrder={updateOrder}
+          menuItems={menuItems}
+          tables={tables}
+          editMode={true}
+          initialData={{
+            tableNumber: editingOrder.tableNumber.toString(),
+            customerName: editingOrder.customerName,
+            selectedItems: menuItems.filter(item => 
+              editingOrder.items.some(orderItem => orderItem.includes(item.name))
+            ),
+            notes: editingOrder.notes || ''
+          }}
+        />
+      )}
+
       <AddOrderModal
         isOpen={isAddOrderModalOpen}
         onClose={() => setIsAddOrderModalOpen(false)}
