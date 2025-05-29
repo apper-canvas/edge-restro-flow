@@ -730,7 +730,6 @@ const MainFeature = () => {
     }
   }
   return (
-return (
     <div className="w-full min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-surface-900 dark:via-surface-800 dark:to-surface-900">
       {/* Modern Dashboard Header */}
       <motion.div 
