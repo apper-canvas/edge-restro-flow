@@ -98,6 +98,44 @@
     @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
   }
 }
+/* Modern Dashboard Enhancements */
+@layer components {
+  .dashboard-card {
+    @apply bg-white/80 dark:bg-surface-800/80 backdrop-blur-lg rounded-3xl shadow-smooth border border-white/20 dark:border-surface-700/50 p-6 transition-all duration-500 hover:shadow-floating hover:scale-105 hover:bg-white/90 dark:hover:bg-surface-800/90;
+  }
+  
+  .analytics-card {
+    @apply bg-gradient-to-br from-white/90 to-white/70 dark:from-surface-800/90 dark:to-surface-700/70 backdrop-blur-xl rounded-2xl shadow-dashboard border border-white/30 dark:border-surface-600/30 p-6 transition-all duration-300 hover:shadow-floating hover:-translate-y-2;
+  }
+  
+  .glass-card {
+    @apply bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-glass p-6 transition-all duration-300 hover:bg-white/20;
+  }
+  
+  .metric-card {
+    @apply bg-gradient-to-br from-primary/5 to-secondary/5 dark:from-primary/10 dark:to-secondary/10 border border-primary/20 dark:border-primary/30 rounded-xl p-4 transition-all duration-300 hover:shadow-glow hover:border-primary/40;
+  }
+  
+  .chart-container {
+    @apply bg-white/80 dark:bg-surface-800/80 backdrop-blur-lg rounded-2xl shadow-soft border border-white/20 dark:border-surface-700/50 p-6 transition-all duration-300 hover:shadow-lg;
+  }
+  
+  .status-indicator {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border-2 transition-all duration-300 hover:scale-110;
+  }
+  
+  .floating-element {
+    @apply animate-float;
+  }
+  
+  .glow-effect {
+    @apply animate-glow;
+  }
+  
+  .smooth-enter {
+    @apply animate-slide-up;
+  }
+}
 
 .toast-container .toast-custom {
   @apply bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 rounded-xl shadow-restaurant;

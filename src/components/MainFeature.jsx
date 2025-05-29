@@ -4,6 +4,7 @@ import { toast } from 'react-toastify'
 import ApperIcon from './ApperIcon'
 import AddOrderModal from './AddOrderModal'
 import AddMenuItemModal from './AddMenuItemModal'
+import Chart from 'react-apexcharts'
 
 
 
@@ -653,47 +654,333 @@ const MainFeature = () => {
 
 
 
+// Chart data and options for analytics
+  const orderStatusChart = {
+    series: [
+      orders.filter(o => o.status === 'pending').length,
+      orders.filter(o => o.status === 'preparing').length,
+      orders.filter(o => o.status === 'ready').length,
+      orders.filter(o => o.status === 'served').length,
+      orders.filter(o => o.status === 'completed').length
+    ],
+    options: {
+      chart: { type: 'donut', fontFamily: 'Inter' },
+      labels: ['Pending', 'Preparing', 'Ready', 'Served', 'Completed'],
+      colors: ['#f59e0b', '#3b82f6', '#10b981', '#6b7280', '#8b5cf6'],
+      legend: { position: 'bottom' },
+      dataLabels: { enabled: false },
+      plotOptions: {
+        pie: {
+          donut: {
+            size: '70%',
+            labels: {
+              show: true,
+              total: {
+                show: true,
+                label: 'Total Orders',
+                fontSize: '14px',
+                color: '#6b7280'
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const revenueChart = {
+    series: [{
+      name: 'Revenue',
+      data: [1200, 1800, 1400, 2100, 1900, 2400, 2800]
+    }],
+    options: {
+      chart: { type: 'area', fontFamily: 'Inter', toolbar: { show: false } },
+      xaxis: { 
+        categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        labels: { style: { colors: '#6b7280' } }
+      },
+      yaxis: { labels: { style: { colors: '#6b7280' } } },
+      colors: ['#2563eb'],
+      stroke: { curve: 'smooth', width: 3 },
+      fill: {
+        type: 'gradient',
+        gradient: {
+          shadeIntensity: 1,
+          opacityFrom: 0.7,
+          opacityTo: 0.3
+        }
+      },
+      grid: { strokeDashArray: 4, borderColor: '#e5e7eb' },
+      dataLabels: { enabled: false }
+    }
+  }
+
+  const tableOccupancyChart = {
+    series: [
+      tables.filter(t => t.status === 'occupied').length,
+      tables.filter(t => t.status === 'available').length,
+      tables.filter(t => t.status === 'reserved').length
+    ],
+    options: {
+      chart: { type: 'pie', fontFamily: 'Inter' },
+      labels: ['Occupied', 'Available', 'Reserved'],
+      colors: ['#ef4444', '#10b981', '#f59e0b'],
+      legend: { position: 'bottom' },
+      dataLabels: { enabled: true }
+    }
+  }
   return (
-    <div className="w-full">
-      {/* Header Stats */}
+return (
+    <div className="w-full min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-surface-900 dark:via-surface-800 dark:to-surface-900">
+      {/* Modern Dashboard Header */}
       <motion.div 
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 mb-8"
+        transition={{ duration: 0.8 }}
+        className="mb-8"
       >
-        <div className="card-elegant text-center">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-            <ApperIcon name="ClipboardList" className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+        <div className="dashboard-card bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold mb-2 text-white">
+                Restaurant Dashboard
+              </h1>
+              <p className="text-white/80 text-lg">
+                Welcome back! Here's what's happening at your restaurant today.
+              </p>
+            </div>
+            <div className="floating-element">
+              <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-sm">
+                <ApperIcon name="ChefHat" className="w-10 h-10 text-white" />
+              </div>
+            </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-surface-900 dark:text-surface-100">{orders.length}</p>
-          <p className="text-xs sm:text-sm text-surface-600 dark:text-surface-400">Active Orders</p>
+        </div>
+      </motion.div>
+
+      {/* Enhanced Analytics Cards */}
+      <motion.div 
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+      >
+        <div className="analytics-card group hover:scale-105 transition-all duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg glow-effect">
+              <ApperIcon name="ClipboardList" className="w-7 h-7 text-white" />
+            </div>
+            <div className="text-right">
+              <p className="text-3xl font-bold text-surface-900 dark:text-surface-100 group-hover:text-blue-600 transition-colors">
+                {orders.length}
+              </p>
+              <p className="text-sm text-surface-600 dark:text-surface-400">Active Orders</p>
+            </div>
+          </div>
+          <div className="w-full bg-surface-200 dark:bg-surface-700 rounded-full h-2">
+            <div 
+              className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(100, (orders.length / 20) * 100)}%` }}
+            ></div>
+          </div>
         </div>
 
-        <div className="card-elegant text-center">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-            <ApperIcon name="Grid3X3" className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+        <div className="analytics-card group hover:scale-105 transition-all duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <ApperIcon name="Users" className="w-7 h-7 text-white" />
+            </div>
+            <div className="text-right">
+              <p className="text-3xl font-bold text-surface-900 dark:text-surface-100 group-hover:text-emerald-600 transition-colors">
+                {tables.filter(t => t.status === 'occupied').length}
+              </p>
+              <p className="text-sm text-surface-600 dark:text-surface-400">Tables Occupied</p>
+            </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-surface-900 dark:text-surface-100">{tables.filter(t => t.status === 'occupied').length}</p>
-          <p className="text-xs sm:text-sm text-surface-600 dark:text-surface-400">Tables Occupied</p>
+          <div className="w-full bg-surface-200 dark:bg-surface-700 rounded-full h-2">
+            <div 
+              className="bg-gradient-to-r from-emerald-500 to-emerald-600 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${(tables.filter(t => t.status === 'occupied').length / tables.length) * 100}%` }}
+            ></div>
+          </div>
         </div>
 
-        <div className="card-elegant text-center">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-            <ApperIcon name="MenuSquare" className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" />
+        <div className="analytics-card group hover:scale-105 transition-all duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg">
+              <ApperIcon name="ChefHat" className="w-7 h-7 text-white" />
+            </div>
+            <div className="text-right">
+              <p className="text-3xl font-bold text-surface-900 dark:text-surface-100 group-hover:text-amber-600 transition-colors">
+                {menuItems.filter(m => m.available).length}
+              </p>
+              <p className="text-sm text-surface-600 dark:text-surface-400">Available Items</p>
+            </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-surface-900 dark:text-surface-100">{menuItems.filter(m => m.available).length}</p>
-          <p className="text-xs sm:text-sm text-surface-600 dark:text-surface-400">Menu Items</p>
+          <div className="w-full bg-surface-200 dark:bg-surface-700 rounded-full h-2">
+            <div 
+              className="bg-gradient-to-r from-amber-500 to-orange-500 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${(menuItems.filter(m => m.available).length / menuItems.length) * 100}%` }}
+            ></div>
+          </div>
         </div>
 
-        <div className="card-elegant text-center">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-            <ApperIcon name="DollarSign" className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+        <div className="analytics-card group hover:scale-105 transition-all duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <ApperIcon name="DollarSign" className="w-7 h-7 text-white" />
+            </div>
+            <div className="text-right">
+              <p className="text-3xl font-bold text-surface-900 dark:text-surface-100 group-hover:text-purple-600 transition-colors">
+                ${paymentStats.totalRevenue.toFixed(0)}
+              </p>
+              <p className="text-sm text-surface-600 dark:text-surface-400">Total Revenue</p>
+            </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold text-surface-900 dark:text-surface-100">
-            ${orders.reduce((sum, order) => sum + order.totalAmount, 0).toFixed(0)}
-          </p>
-          <p className="text-xs sm:text-sm text-surface-600 dark:text-surface-400">Today's Revenue</p>
+          <div className="w-full bg-surface-200 dark:bg-surface-700 rounded-full h-2">
+            <div 
+              className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(100, (paymentStats.totalRevenue / 5000) * 100)}%` }}
+            ></div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Modern Charts Section */}
+      <motion.div 
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.4 }}
+        className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8"
+      >
+        {/* Order Status Distribution */}
+        <div className="chart-container">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100">Order Status</h3>
+            <ApperIcon name="PieChart" className="w-5 h-5 text-surface-500" />
+          </div>
+          <Chart 
+            options={orderStatusChart.options} 
+            series={orderStatusChart.series} 
+            type="donut" 
+            height={250}
+          />
+        </div>
+
+        {/* Weekly Revenue Trend */}
+        <div className="chart-container lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100">Weekly Revenue Trend</h3>
+            <ApperIcon name="TrendingUp" className="w-5 h-5 text-surface-500" />
+          </div>
+          <Chart 
+            options={revenueChart.options} 
+            series={revenueChart.series} 
+            type="area" 
+            height={250}
+          />
+        </div>
+      </motion.div>
+
+      {/* Quick Stats Grid */}
+      <motion.div 
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.6 }}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+      >
+        <div className="metric-card">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+              <ApperIcon name="Clock" className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm text-surface-600 dark:text-surface-400">Avg. Prep Time</p>
+              <p className="text-xl font-bold text-surface-900 dark:text-surface-100">18 min</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="metric-card">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+              <ApperIcon name="TrendingUp" className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm text-surface-600 dark:text-surface-400">Customer Satisfaction</p>
+              <p className="text-xl font-bold text-surface-900 dark:text-surface-100">4.8/5</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="metric-card">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+              <ApperIcon name="Star" className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-sm text-surface-600 dark:text-surface-400">Popular Item</p>
+              <p className="text-lg font-bold text-surface-900 dark:text-surface-100">Margherita Pizza</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="metric-card">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center">
+              <ApperIcon name="Package" className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-sm text-surface-600 dark:text-surface-400">Low Stock Items</p>
+              <p className="text-xl font-bold text-surface-900 dark:text-surface-100">{inventoryStats.lowStock}</p>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Table Occupancy Visualization */}
+      <motion.div 
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.8 }}
+        className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8"
+      >
+        <div className="chart-container">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100">Table Status</h3>
+            <ApperIcon name="Grid3X3" className="w-5 h-5 text-surface-500" />
+          </div>
+          <Chart 
+            options={tableOccupancyChart.options} 
+            series={tableOccupancyChart.series} 
+            type="pie" 
+            height={200}
+          />
+        </div>
+
+        <div className="lg:col-span-2 space-y-4">
+          <div className="dashboard-card">
+            <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-4">Live Table Status</h3>
+            <div className="grid grid-cols-4 gap-3">
+              {tables.map((table) => (
+                <motion.div
+                  key={table.id}
+                  whileHover={{ scale: 1.05 }}
+                  className={`aspect-square rounded-xl p-3 text-center transition-all duration-300 ${
+                    table.status === 'available' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                    table.status === 'occupied' ? 'bg-red-100 text-red-800 border border-red-200' :
+                    'bg-amber-100 text-amber-800 border border-amber-200'
+                  }`}
+                >
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <ApperIcon name="Users" className="w-4 h-4 mb-1" />
+                    <span className="text-xs font-bold">{table.number}</span>
+                    <span className="text-xs opacity-75">{table.capacity}</span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
         </div>
       </motion.div>
 
