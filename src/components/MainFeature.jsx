@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-toastify'
 import ApperIcon from './ApperIcon'
+import AddOrderModal from './AddOrderModal'
+
 
 const MainFeature = () => {
   const [activeTab, setActiveTab] = useState('orders')
@@ -76,11 +78,8 @@ const MainFeature = () => {
     }
   ])
 
-  const [newOrder, setNewOrder] = useState({
-    tableNumber: '',
-    customerName: '',
-    items: []
-  })
+  const [isAddOrderModalOpen, setIsAddOrderModalOpen] = useState(false)
+
 
   const [newMenuItem, setNewMenuItem] = useState({
     name: '',
@@ -122,26 +121,30 @@ const MainFeature = () => {
     toast.success(`Table ${tableId} status updated to ${newStatus}`)
   }
 
-  const addOrder = () => {
-    if (!newOrder.tableNumber || !newOrder.customerName || newOrder.items.length === 0) {
-      toast.error('Please fill in all order details')
-      return
-    }
-
+  const addOrder = (orderData) => {
     const order = {
       id: String(orders.length + 1).padStart(3, '0'),
-      tableNumber: parseInt(newOrder.tableNumber),
-      items: newOrder.items,
+      tableNumber: orderData.tableNumber,
+      items: orderData.items.map(item => `${item.name} x${item.quantity}`),
       status: 'pending',
-      totalAmount: newOrder.items.length * 15.99, // Simplified calculation
+      totalAmount: orderData.totalAmount,
       timestamp: new Date(),
-      customerName: newOrder.customerName
+      customerName: orderData.customerName,
+      notes: orderData.notes
     }
 
     setOrders([...orders, order])
-    setNewOrder({ tableNumber: '', customerName: '', items: [] })
+    
+    // Update table status to occupied
+    setTables(tables.map(table => 
+      table.number === orderData.tableNumber 
+        ? { ...table, status: 'occupied' } 
+        : table
+    ))
+    
     toast.success('New order added successfully!')
   }
+
 
   const addMenuItem = () => {
     if (!newMenuItem.name || !newMenuItem.description || !newMenuItem.price) {
@@ -252,44 +255,28 @@ const MainFeature = () => {
             transition={{ duration: 0.3 }}
             className="space-y-6"
           >
-            {/* Add New Order */}
+            {/* Add New Order Button */}
             <div className="card-elegant">
-              <h3 className="text-lg sm:text-xl font-semibold text-surface-900 dark:text-surface-100 mb-4 flex items-center">
-                <ApperIcon name="Plus" className="w-5 h-5 mr-2 text-primary" />
-                Add New Order
-              </h3>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                <input
-                  type="number"
-                  placeholder="Table Number"
-                  value={newOrder.tableNumber}
-                  onChange={(e) => setNewOrder({...newOrder, tableNumber: e.target.value})}
-                  className="input-modern"
-                />
-                <input
-                  type="text"
-                  placeholder="Customer Name"
-                  value={newOrder.customerName}
-                  onChange={(e) => setNewOrder({...newOrder, customerName: e.target.value})}
-                  className="input-modern"
-                />
-                <input
-                  type="text"
-                  placeholder="Items (comma separated)"
-                  value={newOrder.items.join(', ')}
-                  onChange={(e) => setNewOrder({...newOrder, items: e.target.value.split(',').map(item => item.trim()).filter(item => item)})}
-                  className="input-modern"
-                />
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg sm:text-xl font-semibold text-surface-900 dark:text-surface-100 flex items-center">
+                    <ApperIcon name="Plus" className="w-5 h-5 mr-2 text-primary" />
+                    Add New Order
+                  </h3>
+                  <p className="text-sm text-surface-600 dark:text-surface-400 mt-1">
+                    Create a new order with menu item selection
+                  </p>
+                </div>
                 <button
-                  onClick={addOrder}
-                  className="btn-primary w-full flex items-center justify-center space-x-2"
+                  onClick={() => setIsAddOrderModalOpen(true)}
+                  className="btn-primary flex items-center space-x-2"
                 >
                   <ApperIcon name="Plus" className="w-4 h-4" />
                   <span>Add Order</span>
                 </button>
               </div>
             </div>
+
 
             {/* Orders List */}
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
@@ -538,6 +525,16 @@ const MainFeature = () => {
             </div>
           </motion.div>
         )}
+
+      {/* Add Order Modal */}
+      <AddOrderModal
+        isOpen={isAddOrderModalOpen}
+        onClose={() => setIsAddOrderModalOpen(false)}
+        onAddOrder={addOrder}
+        menuItems={menuItems}
+        tables={tables}
+      />
+
       </AnimatePresence>
     </div>
   )

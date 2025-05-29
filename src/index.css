@@ -98,4 +98,38 @@
 
 .responsive-margin {
   @apply mx-4 sm:mx-6 lg:mx-8;
+
+/* Modal Styles */
+.modal-backdrop {
+  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4;
+}
+
+.modal-content {
+  @apply bg-white dark:bg-surface-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden;
+}
+
+.modal-header {
+  @apply p-6 border-b border-surface-200 dark:border-surface-700 flex items-center justify-between;
+}
+
+.modal-body {
+  @apply p-6 overflow-y-auto max-h-[60vh];
+}
+
+.modal-footer {
+  @apply p-6 border-t border-surface-200 dark:border-surface-700 flex items-center justify-end space-x-4;
+}
+
+.menu-item-card {
+  @apply border border-surface-200 dark:border-surface-600 rounded-lg p-3 hover:border-primary transition-all duration-200 cursor-pointer;
+}
+
+.menu-item-card.selected {
+  @apply border-primary bg-primary/5 dark:bg-primary/10;
+}
+
+.quantity-input {
+  @apply w-16 px-2 py-1 border border-surface-300 dark:border-surface-600 rounded bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-center;
+}
+
 }
