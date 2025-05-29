@@ -228,33 +228,6 @@ const MainFeature = () => {
         })
       }
 
-      // Low stock warnings
-      if (lowStockItems.length > 0) {
-        lowStockItems.filter(item => !criticalItems.includes(item)).forEach(item => {
-          toast.warning(
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center space-x-2">
-                <ApperIcon name="AlertTriangle" className="w-4 h-4 text-amber-600" />
-                <div>
-                  <div className="font-medium">{item.name}</div>
-                  <div className="text-xs">{item.inventory.currentStock} {item.inventory.unit} left</div>
-                </div>
-              </div>
-              <button
-                onClick={() => restockItem(item.id, item.inventory.minThreshold * 2)}
-                className="px-2 py-1 bg-amber-600 text-white rounded text-xs font-medium hover:bg-amber-700 transition-colors"
-              >
-                Quick Restock
-              </button>
-            </div>,
-            {
-              toastId: `low-stock-${item.id}`,
-              autoClose: 8000,
-              className: 'border-l-4 border-amber-500'
-            }
-          )
-        })
-      }
 
       // Out of stock alerts
       if (outOfStockItems.length > 0) {
