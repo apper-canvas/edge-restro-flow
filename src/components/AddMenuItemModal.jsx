@@ -9,7 +9,12 @@ const AddMenuItemModal = ({ isOpen, onClose, onAddMenuItem }) => {
     description: '',
     price: '',
     category: 'Main Course',
-    imageUrl: ''
+    imageUrl: '',
+    initialStock: '10',
+    minThreshold: '5',
+    unit: 'portions',
+    supplier: '',
+    costPerUnit: ''
   })
 
   // Reset form when modal opens/closes
@@ -20,9 +25,15 @@ const AddMenuItemModal = ({ isOpen, onClose, onAddMenuItem }) => {
         description: '',
         price: '',
         category: 'Main Course',
-        imageUrl: ''
+        imageUrl: '',
+        initialStock: '10',
+        minThreshold: '5',
+        unit: 'portions',
+        supplier: '',
+        costPerUnit: ''
       })
     }
+
   }, [isOpen])
 
   const handleSubmit = (e) => {
@@ -43,12 +54,18 @@ const AddMenuItemModal = ({ isOpen, onClose, onAddMenuItem }) => {
     }
 
     // Prepare menu item data
+    // Prepare menu item data
     const menuItemData = {
       name: formData.name.trim(),
       description: formData.description.trim(),
       price: parseFloat(formData.price),
       category: formData.category,
-      imageUrl: formData.imageUrl.trim() || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=300&h=200&fit=crop'
+      imageUrl: formData.imageUrl.trim() || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=300&h=200&fit=crop',
+      initialStock: parseInt(formData.initialStock) || 10,
+      minThreshold: parseInt(formData.minThreshold) || 5,
+      unit: formData.unit || 'portions',
+      supplier: formData.supplier.trim() || 'Default Supplier',
+      costPerUnit: parseFloat(formData.costPerUnit) || 0
     }
 
     onAddMenuItem(menuItemData)
@@ -170,6 +187,98 @@ const AddMenuItemModal = ({ isOpen, onClose, onAddMenuItem }) => {
                 <p className="text-xs text-surface-500 dark:text-surface-400 mt-1">
                   Leave empty to use a default image
                 </p>
+
+              </div>
+
+              {/* Inventory Configuration */}
+              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-700">
+                <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-200 mb-4 flex items-center">
+                  <ApperIcon name="Package" className="w-4 h-4 mr-2" />
+                  Inventory & Alert Configuration
+                </h4>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                      Initial Stock *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.initialStock}
+                      onChange={(e) => setFormData(prev => ({ ...prev, initialStock: e.target.value }))}
+                      className="input-modern"
+                      placeholder="10"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                      Alert Threshold *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.minThreshold}
+                      onChange={(e) => setFormData(prev => ({ ...prev, minThreshold: e.target.value }))}
+                      className="input-modern"
+                      placeholder="5"
+                      required
+                    />
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                      Alert when stock falls below this number
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                      Unit Type
+                    </label>
+                    <select
+                      value={formData.unit}
+                      onChange={(e) => setFormData(prev => ({ ...prev, unit: e.target.value }))}
+                      className="input-modern"
+                    >
+                      <option value="portions">Portions</option>
+                      <option value="pieces">Pieces</option>
+                      <option value="kg">Kilograms</option>
+                      <option value="liters">Liters</option>
+                      <option value="bottles">Bottles</option>
+                      <option value="packages">Packages</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                      Cost Per Unit
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.costPerUnit}
+                      onChange={(e) => setFormData(prev => ({ ...prev, costPerUnit: e.target.value }))}
+                      className="input-modern"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                      Supplier (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.supplier}
+                      onChange={(e) => setFormData(prev => ({ ...prev, supplier: e.target.value }))}
+                      className="input-modern"
+                      placeholder="Enter supplier name"
+                    />
+                  </div>
+                </div>
+              </div>
+
               </div>
 
               {/* Preview */}

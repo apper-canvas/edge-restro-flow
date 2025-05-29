@@ -50,11 +50,17 @@ export default {
         'bounce-gentle': 'bounce 2s infinite',
         'pulse-slow': 'pulse 3s infinite',
         'wiggle': 'wiggle 1s ease-in-out infinite',
+        'ping-slow': 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite',
+        'alert-blink': 'alert-blink 1.5s ease-in-out infinite',
       },
       keyframes: {
         wiggle: {
           '0%, 100%': { transform: 'rotate(-3deg)' },
           '50%': { transform: 'rotate(3deg)' },
+        },
+        'alert-blink': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.5' },
         }
       }
     }

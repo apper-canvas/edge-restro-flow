@@ -157,30 +157,99 @@ const MainFeature = () => {
     toast.success(`Table ${tableId} status updated to ${newStatus}`)
   }
 
-  // Check for low stock alerts
+  // Enhanced alert system for low stock monitoring
   useEffect(() => {
-    const lowStockItems = menuItems.filter(item => 
-      item.inventory.currentStock <= item.inventory.minThreshold && item.inventory.currentStock > 0
-    )
-    const outOfStockItems = menuItems.filter(item => item.inventory.currentStock === 0)
+    const checkInventoryAlerts = () => {
+      const lowStockItems = menuItems.filter(item => 
+        item.inventory.currentStock <= item.inventory.minThreshold && item.inventory.currentStock > 0
+      )
+      const outOfStockItems = menuItems.filter(item => item.inventory.currentStock === 0)
+      const criticalItems = menuItems.filter(item => 
+        item.inventory.currentStock <= Math.ceil(item.inventory.minThreshold * 0.5) && item.inventory.currentStock > 0
+      )
 
-    if (lowStockItems.length > 0) {
-      lowStockItems.forEach(item => {
-        toast.warning(`Low stock alert: ${item.name} (${item.inventory.currentStock} ${item.inventory.unit} remaining)`, {
-          toastId: `low-stock-${item.id}`,
-          autoClose: 5000
+      // Critical stock alerts (below 50% of threshold)
+      if (criticalItems.length > 0) {
+        criticalItems.forEach(item => {
+          toast.error(
+            <div className="flex items-center space-x-2">
+              <ApperIcon name="AlertTriangle" className="w-5 h-5 text-red-600" />
+              <div>
+                <div className="font-semibold">CRITICAL: {item.name}</div>
+                <div className="text-sm">Only {item.inventory.currentStock} {item.inventory.unit} remaining!</div>
+              </div>
+            </div>,
+            {
+              toastId: `critical-stock-${item.id}`,
+              autoClose: false,
+              className: 'border-l-4 border-red-500'
+            }
+          )
         })
-      })
+      }
+
+      // Low stock warnings
+      if (lowStockItems.length > 0) {
+        lowStockItems.filter(item => !criticalItems.includes(item)).forEach(item => {
+          toast.warning(
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center space-x-2">
+                <ApperIcon name="AlertTriangle" className="w-4 h-4 text-amber-600" />
+                <div>
+                  <div className="font-medium">{item.name}</div>
+                  <div className="text-xs">{item.inventory.currentStock} {item.inventory.unit} left</div>
+                </div>
+              </div>
+              <button
+                onClick={() => restockItem(item.id, item.inventory.minThreshold * 2)}
+                className="px-2 py-1 bg-amber-600 text-white rounded text-xs font-medium hover:bg-amber-700 transition-colors"
+              >
+                Quick Restock
+              </button>
+            </div>,
+            {
+              toastId: `low-stock-${item.id}`,
+              autoClose: 8000,
+              className: 'border-l-4 border-amber-500'
+            }
+          )
+        })
+      }
+
+      // Out of stock alerts
+      if (outOfStockItems.length > 0) {
+        outOfStockItems.forEach(item => {
+          toast.error(
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center space-x-2">
+                <ApperIcon name="X" className="w-4 h-4 text-red-600" />
+                <div>
+                  <div className="font-semibold">OUT OF STOCK</div>
+                  <div className="text-sm">{item.name}</div>
+                </div>
+              </div>
+              <button
+                onClick={() => restockItem(item.id, item.inventory.minThreshold * 3)}
+                className="px-2 py-1 bg-red-600 text-white rounded text-xs font-medium hover:bg-red-700 transition-colors"
+              >
+                Emergency Restock
+              </button>
+            </div>,
+            {
+              toastId: `out-of-stock-${item.id}`,
+              autoClose: false,
+              className: 'border-l-4 border-red-600'
+            }
+          )
+        })
+      }
     }
 
-    if (outOfStockItems.length > 0) {
-      outOfStockItems.forEach(item => {
-        toast.error(`Out of stock: ${item.name}`, {
-          toastId: `out-of-stock-${item.id}`,
-          autoClose: false
-        })
-      })
-    }
+    // Check alerts immediately and then every 30 seconds
+    checkInventoryAlerts()
+    const alertInterval = setInterval(checkInventoryAlerts, 30000)
+
+    return () => clearInterval(alertInterval)
   }, [menuItems])
 
 
@@ -307,7 +376,15 @@ const MainFeature = () => {
     }
 
     setMenuItems([...menuItems, newMenuItem])
-
+    toast.success(
+      <div className="flex items-center space-x-2">
+        <ApperIcon name="Plus" className="w-4 h-4 text-green-600" />
+        <div>
+          <div className="font-medium">{menuItemData.name} added!</div>
+          <div className="text-xs">Alert threshold: {menuItemData.minThreshold} {menuItemData.unit}</div>
+        </div>
+      </div>
+    )
   }
 
 
@@ -1036,19 +1113,44 @@ const MainFeature = () => {
               </div>
             </div>
 
-            {/* Inventory Management Header */}
+            {/* Enhanced Inventory Management Header */}
             <div className="card-elegant">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-xl font-semibold text-surface-900 dark:text-surface-100 flex items-center">
                     <ApperIcon name="Package" className="w-5 h-5 mr-2 text-primary" />
-                    Inventory Management
+                    Inventory & Alert Management
                   </h3>
                   <p className="text-sm text-surface-600 dark:text-surface-400 mt-1">
-                    Monitor stock levels and manage inventory for all menu items
+                    Monitor stock levels and configure automatic alerts for all menu items
                   </p>
                 </div>
                 <div className="flex space-x-2">
+                  <button
+                    onClick={() => {
+                      const alertCount = menuItems.filter(item => 
+                        item.inventory.currentStock <= item.inventory.minThreshold
+                      ).length
+                      if (alertCount > 0) {
+                        toast.info(
+                          <div className="flex items-center space-x-2">
+                            <ApperIcon name="Bell" className="w-4 h-4 text-blue-600" />
+                            <div>
+                              <div className="font-medium">Alert Summary</div>
+                              <div className="text-xs">{alertCount} items need attention</div>
+                            </div>
+                          </div>,
+                          { autoClose: 3000 }
+                        )
+                      } else {
+                        toast.success('All items are well stocked!')
+                      }
+                    }}
+                    className="px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2"
+                  >
+                    <ApperIcon name="Bell" className="w-4 h-4" />
+                    <span>Check Alerts</span>
+                  </button>
                   <button
                     onClick={() => {
                       menuItems.forEach(item => {
@@ -1064,6 +1166,41 @@ const MainFeature = () => {
                   </button>
                 </div>
               </div>
+              
+              {/* Alert Statistics */}
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="flex items-center space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <ApperIcon name="CheckCircle" className="w-5 h-5 text-green-600" />
+                  <div>
+                    <div className="text-sm font-medium text-green-800 dark:text-green-200">Well Stocked</div>
+                    <div className="text-xs text-green-600 dark:text-green-400">
+                      {menuItems.filter(item => item.inventory.currentStock > item.inventory.minThreshold).length} items
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                  <ApperIcon name="AlertTriangle" className="w-5 h-5 text-amber-600" />
+                  <div>
+                    <div className="text-sm font-medium text-amber-800 dark:text-amber-200">Low Stock Alerts</div>
+                    <div className="text-xs text-amber-600 dark:text-amber-400">
+                      {menuItems.filter(item => 
+                        item.inventory.currentStock <= item.inventory.minThreshold && item.inventory.currentStock > 0
+                      ).length} items
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                  <ApperIcon name="XCircle" className="w-5 h-5 text-red-600" />
+                  <div>
+                    <div className="text-sm font-medium text-red-800 dark:text-red-200">Critical Alerts</div>
+                    <div className="text-xs text-red-600 dark:text-red-400">
+                      {menuItems.filter(item => item.inventory.currentStock === 0).length} items
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Inventory Grid */}
@@ -1076,20 +1213,33 @@ const MainFeature = () => {
                     layout
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className={`card-elegant overflow-hidden inventory-card ${inventoryStatus}`}
-                  >
+                    className={`card-elegant overflow-hidden inventory-card ${inventoryStatus} ${
+                      item.inventory.currentStock <= Math.ceil(item.inventory.minThreshold * 0.5) && item.inventory.currentStock > 0
+                        ? 'animate-pulse-slow border-red-400 shadow-red-200'
+                        : item.inventory.currentStock <= item.inventory.minThreshold && item.inventory.currentStock > 0
+                        ? 'animate-bounce-gentle border-amber-400'
+                        : ''
+                    >{
                     {/* Item Header */}
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
                         <h4 className="font-semibold text-surface-900 dark:text-surface-100">{item.name}</h4>
                         <p className="text-sm text-surface-600 dark:text-surface-400">{item.category}</p>
                       </div>
-                      <div className={`px-2 py-1 rounded-full text-xs font-medium stock-status ${inventoryStatus}`}>
-                        {inventoryStatus === 'in-stock' && '✅ In Stock'}
-                        {inventoryStatus === 'low-stock' && '⚠️ Low Stock'}
-                        {inventoryStatus === 'out-of-stock' && '❌ Out of Stock'}
+                      <div className={`px-2 py-1 rounded-full text-xs font-medium stock-status ${inventoryStatus} flex items-center space-x-1`}>
+                        {inventoryStatus === 'in-stock' && (
+                          <><ApperIcon name="Check" className="w-3 h-3" /><span>In Stock</span></>
+                        )}
+                        {inventoryStatus === 'low-stock' && (
+                          <><ApperIcon name="AlertTriangle" className="w-3 h-3" /><span>Low Stock</span></>
+                        )}
+                        {inventoryStatus === 'out-of-stock' && (
+                          <><ApperIcon name="X" className="w-3 h-3" /><span>Out of Stock</span></>
+                        )}
+                        {item.inventory.currentStock <= Math.ceil(item.inventory.minThreshold * 0.5) && item.inventory.currentStock > 0 && (
+                          <ApperIcon name="Bell" className="w-3 h-3 text-red-600 animate-wiggle" />
+                        )}
                       </div>
-                    </div>
 
                     {/* Stock Information */}
                     <div className="space-y-3 mb-4">
