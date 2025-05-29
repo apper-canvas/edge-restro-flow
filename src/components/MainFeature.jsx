@@ -318,80 +318,205 @@ const MainFeature = () => {
               </div>
             </div>
 
-            {/* Order Filters */}
-            <div className="card-elegant">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg sm:text-xl font-semibold text-surface-900 dark:text-surface-100 flex items-center">
-                  <ApperIcon name="Filter" className="w-5 h-5 mr-2 text-primary" />
-                  Filter Orders
-                </h3>
-                <button
-                  onClick={clearAllFilters}
-                  className="text-sm text-surface-600 dark:text-surface-400 hover:text-primary transition-colors flex items-center space-x-1"
-                >
-                  <ApperIcon name="X" className="w-4 h-4" />
-                  <span>Clear All</span>
-                </button>
+            {/* Enhanced Order Filters */}
+            <div className="filter-card">
+              {/* Filter Header */}
+              <div className="filter-header">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                      <ApperIcon name="Filter" className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">Smart Order Filters</h3>
+                      <p className="text-white/80 text-sm">Find orders quickly with advanced filtering</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={clearAllFilters}
+                    className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 backdrop-blur-sm"
+                  >
+                    <ApperIcon name="RotateCcw" className="w-4 h-4" />
+                    <span>Reset Filters</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="filter-grid gap-4">
+              {/* Quick Status Filters */}
+              <div className="mb-6">
+                <h4 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-3 flex items-center">
+                  <ApperIcon name="Zap" className="w-5 h-5 mr-2 text-amber-500" />
+                  Quick Status Filters
+                </h4>
+                <div className="flex flex-wrap gap-3">
+                  {['All', 'pending', 'preparing', 'ready', 'served'].map((status) => {
+                    const isActive = filters.status === status
+                    const statusLabels = {
+                      'All': 'All Orders',
+                      'pending': 'Pending',
+                      'preparing': 'Preparing', 
+                      'ready': 'Ready',
+                      'served': 'Served'
+                    }
+                    
+                    return (
+                      <button
+                        key={status}
+                        onClick={() => handleFilterChange('status', status)}
+                        className={`quick-filter-button ${
+                          isActive ? 'quick-filter-active' : 'quick-filter-inactive'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-2">
+                          {status !== 'All' && (
+                            <div className={`w-3 h-3 rounded-full ${
+                              status === 'pending' ? 'bg-amber-400' :
+                              status === 'preparing' ? 'bg-blue-400' :
+                              status === 'ready' ? 'bg-green-400' :
+                              'bg-gray-400'
+                            }`}></div>
+                          )}
+                          <span>{statusLabels[status]}</span>
+                          {status !== 'All' && (
+                            <span className="bg-white/20 text-xs px-2 py-0.5 rounded-full">
+                              {orders.filter(o => o.status === status).length}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Advanced Filter Controls */}
+              <div className="filter-grid">
                 {/* Status Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
-                    Status
+                <div className="filter-control">
+                  <label className="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-3 flex items-center">
+                    <ApperIcon name="Settings" className="w-4 h-4 mr-2 text-primary" />
+                    Order Status
                   </label>
-                  <select
-                    value={filters.status}
-                    onChange={(e) => handleFilterChange('status', e.target.value)}
-                    className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-sm"
-                  >
-                    <option value="All">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="preparing">Preparing</option>
-                    <option value="ready">Ready</option>
-                    <option value="served">Served</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={filters.status}
+                      onChange={(e) => handleFilterChange('status', e.target.value)}
+                      className="filter-select"
+                    >
+                      <option value="All">🔄 All Status Types</option>
+                      <option value="pending">⏳ Pending Orders</option>
+                      <option value="preparing">👨‍🍳 Currently Preparing</option>
+                      <option value="ready">✅ Ready to Serve</option>
+                      <option value="served">📋 Completed Orders</option>
+                    </select>
+                    <ApperIcon name="ChevronDown" className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-surface-400 pointer-events-none" />
+                  </div>
                 </div>
 
-                {/* Table Number Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
-                    Table
+                {/* Table Filter */}
+                <div className="filter-control">
+                  <label className="block text-sm font-semibold text-surface-700 dark:text-surface-300 mb-3 flex items-center">
+                    <ApperIcon name="Grid3X3" className="w-4 h-4 mr-2 text-primary" />
+                    Table Selection
                   </label>
-                  <select
-                    value={filters.tableNumber}
-                    onChange={(e) => handleFilterChange('tableNumber', e.target.value)}
-                    className="w-full px-3 py-2 border border-surface-300 dark:border-surface-600 rounded-lg bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 text-sm"
-                  >
-                    <option value="All">All Tables</option>
-                    {uniqueTableNumbers.map(tableNum => (
-                      <option key={tableNum} value={tableNum.toString()}>Table {tableNum}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={filters.tableNumber}
+                      onChange={(e) => handleFilterChange('tableNumber', e.target.value)}
+                      className="filter-select"
+                    >
+                      <option value="All">🏠 All Tables</option>
+                      {uniqueTableNumbers.map(tableNum => (
+                        <option key={tableNum} value={tableNum.toString()}>🍽️ Table {tableNum}</option>
+                      ))}
+                    </select>
+                    <ApperIcon name="ChevronDown" className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-surface-400 pointer-events-none" />
+                  </div>
                 </div>
-
               </div>
 
-              {/* Filter Results Summary */}
-              <div className="mt-4 pt-4 border-t border-surface-200 dark:border-surface-600">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-surface-600 dark:text-surface-400">
-                    Showing {filteredOrders.length} of {orders.length} orders
-                  </span>
+              {/* Active Filter Badges */}
+              {(filters.status !== 'All' || filters.tableNumber !== 'All') && (
+                <div className="mt-6 pt-4 border-t border-surface-200 dark:border-surface-600">
+                  <h5 className="text-sm font-medium text-surface-700 dark:text-surface-300 mb-3 flex items-center">
+                    <ApperIcon name="Tag" className="w-4 h-4 mr-2" />
+                    Active Filters
+                  </h5>
+                  <div className="flex flex-wrap gap-2">
+                    {filters.status !== 'All' && (
+                      <div className="filter-badge">
+                        <span>Status: {filters.status.charAt(0).toUpperCase() + filters.status.slice(1)}</span>
+                        <button
+                          onClick={() => handleFilterChange('status', 'All')}
+                          className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
+                        >
+                          <ApperIcon name="X" className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                    {filters.tableNumber !== 'All' && (
+                      <div className="filter-badge">
+                        <span>Table: {filters.tableNumber}</span>
+                        <button
+                          onClick={() => handleFilterChange('tableNumber', 'All')}
+                          className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
+                        >
+                          <ApperIcon name="X" className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Enhanced Filter Results Summary */}
+              <div className="filter-results-card mt-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
+                      <ApperIcon name="Search" className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold text-emerald-800 dark:text-emerald-200">
+                        {filteredOrders.length} Orders Found
+                      </p>
+                      <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                        Out of {orders.length} total orders
+                      </p>
+                    </div>
+                  </div>
                   {filteredOrders.length !== orders.length && (
-                    <span className="text-primary font-medium">
-                      {orders.length - filteredOrders.length} orders filtered out
-                    </span>
+                    <div className="text-right">
+                      <div className="px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 rounded-full text-sm font-medium">
+                        {orders.length - filteredOrders.length} filtered out
+                      </div>
+                    </div>
                   )}
                 </div>
+                
+                {filteredOrders.length === 0 && orders.length > 0 && (
+                  <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <div className="flex items-center space-x-2 text-amber-800 dark:text-amber-200">
+                      <ApperIcon name="AlertTriangle" className="w-5 h-5" />
+                      <span className="font-medium">No orders match your current filters</span>
+                    </div>
+                    <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
+                      Try adjusting your filter criteria or clearing all filters to see more results.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
 
 
+
+
+            {/* Orders List */}
             {/* Orders List */}
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-              {orders.map((order) => (
+              {filteredOrders.map((order) => (
+
                 <motion.div
                   key={order.id}
                   layout
@@ -512,8 +637,6 @@ const MainFeature = () => {
                   <div key={table.id} className="p-3 bg-surface-50 dark:bg-surface-700 rounded-lg">
                       <span>Table {table.number}</span>
 
-                    <div className="text-sm font-medium text-surface-900 dark:text-surface-100 mb-2">
-                    </div>
                     <select
                       value={table.status}
                       onChange={(e) => updateTableStatus(table.id, e.target.value)}
